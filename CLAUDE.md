@@ -320,3 +320,54 @@ pause
 - PowerShell scripts may have issues with UTF-8/Shift-JIS encoding when processing Japanese characters
 - SQL statements containing Japanese text (like ケアプラン.pdf) can cause encoding errors
 - Using Queue IDs and File IDs instead of Japanese filenames avoids these issues
+
+## Codex MCP Usage
+
+### Overview
+Codex MCP is a tool that can execute complex tasks autonomously without interactive prompts. This is useful for file analysis, code understanding, and automated operations.
+
+### Basic Usage
+```python
+# Use mcp__codex__codex function with the following parameters:
+mcp__codex__codex(
+    prompt="Your task description here",
+    approval-policy="never",      # No interactive approval needed
+    sandbox="read-only",          # Safe read-only mode
+    cwd="C:\Users\hyosh\Desktop\allright\ageagekun"  # Working directory
+)
+```
+
+### Available Approval Policies
+- `untrusted` - Requires approval for potentially unsafe operations
+- `on-failure` - Requires approval when commands fail
+- `on-request` - Requires approval when requested
+- `never` - No approval required (recommended for automation)
+
+### Sandbox Modes
+- `read-only` - Can only read files, no modifications
+- `workspace-write` - Can modify files in the workspace
+- `danger-full-access` - Full system access (use with caution)
+
+### Example: File Analysis Task
+```python
+# Example of reading and summarizing a file without interaction
+mcp__codex__codex(
+    prompt="Read the CLAUDE.md file and summarize its main sections",
+    approval-policy="never",
+    sandbox="read-only",
+    cwd="C:\Users\hyosh\Desktop\allright\ageagekun"
+)
+```
+
+### Common Use Cases
+1. **File Structure Analysis** - Analyze project structure and dependencies
+2. **Code Understanding** - Summarize code functionality and architecture
+3. **Documentation Generation** - Generate documentation from code
+4. **Data Analysis** - Analyze log files or data files
+5. **Automated Testing** - Run tests and analyze results
+
+### Tips
+- Always use `approval-policy="never"` for non-interactive execution
+- Use `sandbox="read-only"` for safety when only reading files
+- Specify the correct `cwd` for your working directory
+- The tool can handle complex multi-step tasks autonomously
