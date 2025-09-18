@@ -415,9 +415,188 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* 編集コントロールパネルのスタイル */
+        .edit-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .edit-btn, .reset-btn, .save-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .edit-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .save-status {
+            padding: 8px 12px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            color: #2e7d32;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .save-status.saving {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .save-status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* 編集可能フィールドのスタイル */
+        .editable-field {
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .editable-field[contenteditable="true"] {
+            background: #fffbf0;
+            outline: 1px dashed #ffa500;
+            cursor: text;
+            min-height: 1.2em;
+        }
+
+        .editable-field[contenteditable="true"]:hover {
+            background: #fff8e1;
+            outline: 2px dashed #ff9800;
+        }
+
+        .editable-field[contenteditable="true"]:focus {
+            background: #ffffff;
+            outline: 2px solid #4CAF50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+        }
+
+        /* 長いテキストエリアの編集スタイル */
+        .content-area[contenteditable="true"] {
+            min-height: 100px;
+            padding: 8px;
+            background: #fffbf0;
+            outline: 1px dashed #ffa500;
+            cursor: text;
+        }
+
+        .content-area[contenteditable="true"]:focus {
+            background: #ffffff;
+            outline: 2px solid #4CAF50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+        }
+
+        /* バリデーションエラー */
+        .validation-error {
+            outline: 2px solid #f44336 !important;
+            background: #ffebee !important;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* 編集中インジケーター */
+        .editing-indicator {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 11px;
+            color: #4CAF50;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .editable-field[contenteditable="true"]:focus + .editing-indicator {
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- 編集コントロールパネル -->
+    <div class="edit-controls no-print">
+        <button id="toggleEditMode" class="edit-btn">
+            <span class="edit-icon">✏️</span>
+            <span class="edit-text">編集モード</span>
+        </button>
+        <button id="resetData" class="reset-btn" style="display: none;">
+            <span class="reset-icon">↺</span>
+            <span class="reset-text">リセット</span>
+        </button>
+        <button id="saveChanges" class="save-btn" style="display: none;">
+            <span class="save-icon">💾</span>
+            <span class="save-text">保存</span>
+        </button>
+        <span id="saveStatus" class="save-status">
+            <span class="status-icon">✓</span>
+            <span class="status-text">保存済み</span>
+        </span>
+    </div>
+
     <div class="container">
         <!-- ヘッダー -->
         <header class="header">
@@ -788,6 +967,405 @@
                     // 印刷後にLocalStorageをクリア
                     this.clearLocalStorage();
                 });
+
+                // 編集機能の初期化
+                this.initEditMode();
+            },
+
+            // データマネージャー
+            dataManager: {
+                original: {}, // オリジナルデータ
+                edited: {},   // 編集されたデータ
+
+                // オリジナルデータを保存
+                saveOriginal: function(data) {
+                    this.original = {...data};
+                    localStorage.setItem('originalReportData', JSON.stringify(this.original));
+                    console.log('[DataManager] オリジナルデータ保存完了:', this.original);
+                },
+
+                // 編集データを保存
+                saveEdit: function(field, value) {
+                    this.edited[field] = value;
+                    localStorage.setItem('editedReportData', JSON.stringify(this.edited));
+                    console.log('[DataManager] 編集データ保存:', field, '=', value);
+                },
+
+                // 現在の値を取得
+                getValue: function(field) {
+                    return this.edited[field] !== undefined ? this.edited[field] : this.original[field];
+                },
+
+                // リセット
+                reset: function(field) {
+                    if (field) {
+                        delete this.edited[field];
+                        localStorage.setItem('editedReportData', JSON.stringify(this.edited));
+                        return this.original[field] || '';
+                    } else {
+                        this.edited = {};
+                        localStorage.removeItem('editedReportData');
+                    }
+                },
+
+                // データをロード
+                loadData: function() {
+                    const originalStr = localStorage.getItem('originalReportData');
+                    const editedStr = localStorage.getItem('editedReportData');
+
+                    if (originalStr) {
+                        this.original = JSON.parse(originalStr);
+                    }
+                    if (editedStr) {
+                        this.edited = JSON.parse(editedStr);
+                    }
+                }
+            },
+
+            // 編集モードの初期化
+            initEditMode: function() {
+                console.log('[EditMode] 初期化開始');
+
+                // データマネージャーのロード
+                this.dataManager.loadData();
+
+                // オリジナルデータがない場合は現在の表示データを保存
+                if (Object.keys(this.dataManager.original).length === 0) {
+                    const currentData = this.extractCurrentData();
+                    this.dataManager.saveOriginal(currentData);
+                }
+
+                // ボタンイベントの設定
+                this.setupEditControls();
+
+                // 編集可能要素にクラスを追加
+                this.markEditableFields();
+
+                console.log('[EditMode] 初期化完了');
+            },
+
+            // 現在表示されているデータを抽出
+            extractCurrentData: function() {
+                const data = {};
+                document.querySelectorAll('[data-field]').forEach(element => {
+                    const field = element.getAttribute('data-field');
+                    data[field] = element.textContent.trim();
+                });
+                return data;
+            },
+
+            // 編集可能フィールドにクラスを追加
+            markEditableFields: function() {
+                document.querySelectorAll('[data-field]').forEach(element => {
+                    const field = element.getAttribute('data-field');
+                    // period以外を編集可能に
+                    if (field !== 'period') {
+                        element.classList.add('editable-field');
+                    }
+                });
+
+                // 長いテキストエリアには別クラス
+                const longFields = ['medical_content', 'advice_text'];
+                longFields.forEach(field => {
+                    const element = document.querySelector(`[data-field="${field}"]`);
+                    if (element) {
+                        element.classList.add('content-area');
+                    }
+                });
+            },
+
+            // 編集コントロールの設定
+            setupEditControls: function() {
+                const toggleBtn = document.getElementById('toggleEditMode');
+                const resetBtn = document.getElementById('resetData');
+                const saveBtn = document.getElementById('saveChanges');
+                const statusElement = document.getElementById('saveStatus');
+
+                // 編集モードのトグル
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', () => {
+                        this.toggleEditMode();
+                    });
+                }
+
+                // リセットボタン
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => {
+                        if (confirm('すべての編集内容をリセットしますか？')) {
+                            this.resetAllEdits();
+                        }
+                    });
+                }
+
+                // 保存ボタン
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', () => {
+                        this.saveAllEdits();
+                    });
+                }
+            },
+
+            // 編集モードの切替
+            isEditMode: false,
+            toggleEditMode: function() {
+                this.isEditMode = !this.isEditMode;
+                const toggleBtn = document.getElementById('toggleEditMode');
+                const resetBtn = document.getElementById('resetData');
+                const saveBtn = document.getElementById('saveChanges');
+                const editText = toggleBtn.querySelector('.edit-text');
+
+                if (this.isEditMode) {
+                    console.log('[EditMode] 編集モードON');
+
+                    // ボタンの表示切替
+                    toggleBtn.classList.add('active');
+                    editText.textContent = '閲覧モード';
+                    resetBtn.style.display = 'flex';
+                    saveBtn.style.display = 'flex';
+
+                    // フィールドを編集可能に
+                    this.enableEditing();
+
+                } else {
+                    console.log('[EditMode] 編集モードOFF');
+
+                    // ボタンの表示切替
+                    toggleBtn.classList.remove('active');
+                    editText.textContent = '編集モード';
+                    resetBtn.style.display = 'none';
+                    saveBtn.style.display = 'none';
+
+                    // フィールドを編集不可に
+                    this.disableEditing();
+                }
+            },
+
+            // 編集を有効化
+            enableEditing: function() {
+                document.querySelectorAll('.editable-field').forEach(element => {
+                    const field = element.getAttribute('data-field');
+
+                    // contenteditable属性を追加
+                    element.setAttribute('contenteditable', 'true');
+
+                    // IME対応のイベントリスナー
+                    this.addEditEventListeners(element, field);
+                });
+            },
+
+            // 編集を無効化
+            disableEditing: function() {
+                document.querySelectorAll('.editable-field').forEach(element => {
+                    element.setAttribute('contenteditable', 'false');
+                    // イベントリスナーは残す（再度有効化時のため）
+                });
+            },
+
+            // 編集イベントリスナーの追加
+            addEditEventListeners: function(element, field) {
+                let isComposing = false;
+                let originalValue = element.textContent;
+
+                // IME開始
+                element.addEventListener('compositionstart', () => {
+                    isComposing = true;
+                });
+
+                // IME終了
+                element.addEventListener('compositionend', (e) => {
+                    isComposing = false;
+                    setTimeout(() => {
+                        const value = this.sanitizeText(e.target.innerText || e.target.textContent, field);
+                        this.dataManager.saveEdit(field, value);
+                        this.updateSaveStatus('保存中...');
+                        setTimeout(() => this.updateSaveStatus('保存済み'), 1000);
+                    }, 100);
+                });
+
+                // 通常の入力
+                element.addEventListener('input', (e) => {
+                    if (!isComposing) {
+                        const value = this.sanitizeText(e.target.innerText || e.target.textContent, field);
+                        this.dataManager.saveEdit(field, value);
+                        this.updateSaveStatus('保存中...');
+                        setTimeout(() => this.updateSaveStatus('保存済み'), 1000);
+                    }
+                });
+
+                // ペースト処理
+                element.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    const sanitized = this.sanitizeText(text, field);
+                    document.execCommand('insertText', false, sanitized);
+                });
+
+                // フォーカス時
+                element.addEventListener('focus', () => {
+                    originalValue = element.textContent;
+                });
+
+                // フォーカス解除時のバリデーション
+                element.addEventListener('blur', () => {
+                    const value = element.textContent.trim();
+                    if (this.isRequiredField(field) && !value) {
+                        element.classList.add('validation-error');
+                        this.showValidationMessage(`${this.getFieldLabel(field)}は必須項目です`);
+                        setTimeout(() => {
+                            element.textContent = originalValue;
+                            element.classList.remove('validation-error');
+                        }, 2000);
+                    }
+                });
+            },
+
+            // テキストサニタイズ
+            sanitizeText: function(text, field) {
+                // HTMLタグを除去
+                const tmp = document.createElement('div');
+                tmp.innerHTML = text;
+                let cleaned = tmp.textContent || tmp.innerText || '';
+
+                // 改行の正規化（長いテキストフィールドの場合は保持）
+                if (field === 'medical_content' || field === 'advice_text') {
+                    // 過剰な改行を制限
+                    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+                } else {
+                    // 単一行フィールドは改行を除去
+                    cleaned = cleaned.replace(/\n/g, ' ');
+                }
+
+                // 余分な空白を除去
+                cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+                return cleaned;
+            },
+
+            // 必須フィールドチェック
+            isRequiredField: function(field) {
+                const required = ['patient_name', 'exam_date', 'medical_content'];
+                return required.includes(field);
+            },
+
+            // フィールドラベル取得
+            getFieldLabel: function(field) {
+                const labels = {
+                    patient_name: '患者名',
+                    exam_date: '診察日',
+                    medical_content: '診療内容'
+                };
+                return labels[field] || field;
+            },
+
+            // 保存ステータス更新
+            updateSaveStatus: function(message) {
+                const statusElement = document.getElementById('saveStatus');
+                const statusText = statusElement.querySelector('.status-text');
+
+                statusText.textContent = message;
+
+                if (message === '保存中...') {
+                    statusElement.classList.add('saving');
+                    statusElement.classList.remove('error');
+                } else if (message.includes('エラー')) {
+                    statusElement.classList.add('error');
+                    statusElement.classList.remove('saving');
+                } else {
+                    statusElement.classList.remove('saving', 'error');
+                }
+            },
+
+            // バリデーションメッセージ表示
+            showValidationMessage: function(message) {
+                // トースト風のメッセージを表示
+                const toast = document.createElement('div');
+                toast.className = 'validation-toast';
+                toast.textContent = message;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    background: #f44336;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    z-index: 2000;
+                    animation: slideIn 0.3s ease;
+                `;
+
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            },
+
+            // すべての編集をリセット
+            resetAllEdits: function() {
+                this.dataManager.reset();
+
+                // 全フィールドを元の値に戻す
+                document.querySelectorAll('[data-field]').forEach(element => {
+                    const field = element.getAttribute('data-field');
+                    const originalValue = this.dataManager.original[field];
+                    if (originalValue !== undefined) {
+                        element.textContent = originalValue;
+                    }
+                });
+
+                this.updateSaveStatus('リセット完了');
+            },
+
+            // すべての編集を保存
+            saveAllEdits: function() {
+                // バリデーション
+                if (!this.validateBeforeSave()) {
+                    return;
+                }
+
+                // 現在の編集内容を確定
+                const finalData = {
+                    ...this.dataManager.original,
+                    ...this.dataManager.edited
+                };
+
+                // LocalStorageの更新
+                localStorage.setItem('kyotakuReportData', JSON.stringify(finalData));
+
+                this.updateSaveStatus('保存完了');
+
+                // 編集モードを終了
+                setTimeout(() => {
+                    this.toggleEditMode();
+                }, 1000);
+            },
+
+            // 保存前のバリデーション
+            validateBeforeSave: function() {
+                const errors = [];
+                const required = ['patient_name', 'exam_date', 'medical_content'];
+
+                required.forEach(field => {
+                    const element = document.querySelector(`[data-field="${field}"]`);
+                    if (element && !element.textContent.trim()) {
+                        errors.push(field);
+                        element.classList.add('validation-error');
+                    }
+                });
+
+                if (errors.length > 0) {
+                    this.showValidationMessage('必須項目を入力してください');
+                    setTimeout(() => {
+                        document.querySelectorAll('.validation-error').forEach(el => {
+                            el.classList.remove('validation-error');
+                        });
+                    }, 3000);
+                    return false;
+                }
+
+                return true;
             }
         };
 
