@@ -286,9 +286,9 @@
         .advice-list {
             margin: 10px 0;
             padding-left: 0;
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
+            flex-grow: 1;
         }
 
         .advice-item {
@@ -574,6 +574,250 @@
         .editable-field[contenteditable="true"]:focus + .editing-indicator {
             display: block;
         }
+
+        /* アドバイスセレクターのスタイル */
+        .advice-selector-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .advice-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .advice-selector-header h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .advice-counter {
+            padding: 6px 12px;
+            background: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .advice-counter.max-reached {
+            background: #ffebee;
+            color: #dc3545;
+        }
+
+        .counter-current {
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .counter-max {
+            color: #6c757d;
+        }
+
+        /* 選択済みタグエリア */
+        .selected-advice-tags {
+            min-height: 44px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .selected-advice-tags:empty::before {
+            content: "選択されたアドバイスがここに表示されます";
+            color: #adb5bd;
+            font-size: 14px;
+            font-style: italic;
+            padding: 10px;
+        }
+
+        .advice-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tag-text {
+            margin-right: 8px;
+        }
+
+        .tag-remove {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .tag-remove:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        /* ドロップダウンラッパー */
+        .advice-dropdown-wrapper {
+            position: relative;
+        }
+
+        .advice-search {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .advice-search:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .advice-search:disabled {
+            background: #f8f9fa;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* ドロップダウンリスト */
+        .advice-dropdown-list {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            max-height: 320px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .advice-dropdown-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .advice-dropdown-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+
+        .advice-dropdown-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 8px;
+        }
+
+        .advice-dropdown-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .advice-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .advice-option:last-child {
+            border-bottom: none;
+        }
+
+        .advice-option:hover {
+            background: #f8f9fa;
+        }
+
+        .advice-option:focus {
+            background: #e7f5ff;
+            outline: none;
+        }
+
+        .advice-option.selected {
+            background: #e8f5e9;
+            color: #2e7d32;
+            pointer-events: none;
+        }
+
+        .advice-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #fafafa;
+        }
+
+        .advice-option-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+
+        .advice-option-content {
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        /* 空の状態 */
+        .advice-dropdown-empty {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        /* レスポンシブ対応 */
+        @media screen and (max-width: 768px) {
+            .advice-selector-container {
+                padding: 15px;
+            }
+
+            .advice-selector-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .advice-tag {
+                font-size: 13px;
+                padding: 6px 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -683,6 +927,37 @@
 
             <div class="subsection">
                 <h3 class="subsection-title">居宅療養アドバイス・日常生活の注意点</h3>
+
+                <!-- アドバイスセレクター（編集モード時のみ表示） -->
+                <div class="advice-selector-container no-print" style="display: none;">
+                    <div class="advice-selector-header">
+                        <h4>アドバイス項目を選択（最大3つまで）</h4>
+                        <span class="advice-counter">
+                            <span class="counter-current">0</span> / <span class="counter-max">3</span>
+                        </span>
+                    </div>
+
+                    <!-- 選択済みタグエリア -->
+                    <div class="selected-advice-tags"></div>
+
+                    <!-- ドロップダウンセレクター -->
+                    <div class="advice-dropdown-wrapper">
+                        <input type="text"
+                               class="advice-search"
+                               placeholder="アドバイスを検索または選択..."
+                               aria-label="アドバイス検索"
+                               aria-expanded="false"
+                               aria-controls="advice-dropdown-list"
+                               autocomplete="off">
+                        <div class="advice-dropdown-list"
+                             id="advice-dropdown-list"
+                             role="listbox"
+                             style="display: none;">
+                            <!-- 動的に生成 -->
+                        </div>
+                    </div>
+                </div>
+
                 <div class="advice-list">
                     <div class="advice-item" data-advice="hypertension" style="display: none;">
                         <input type="checkbox" class="advice-checkbox" checked readonly>
@@ -976,6 +1251,7 @@
             dataManager: {
                 original: {}, // オリジナルデータ
                 edited: {},   // 編集されたデータ
+                advices: [],  // 選択されたアドバイス
 
                 // オリジナルデータを保存
                 saveOriginal: function(data) {
@@ -991,6 +1267,13 @@
                     console.log('[DataManager] 編集データ保存:', field, '=', value);
                 },
 
+                // アドバイスデータを保存
+                saveAdvices: function(advices) {
+                    this.advices = advices;
+                    localStorage.setItem('selectedAdvices', JSON.stringify(this.advices));
+                    console.log('[DataManager] アドバイス保存:', this.advices);
+                },
+
                 // 現在の値を取得
                 getValue: function(field) {
                     return this.edited[field] !== undefined ? this.edited[field] : this.original[field];
@@ -1004,7 +1287,9 @@
                         return this.original[field] || '';
                     } else {
                         this.edited = {};
+                        this.advices = [];
                         localStorage.removeItem('editedReportData');
+                        localStorage.removeItem('selectedAdvices');
                     }
                 },
 
@@ -1012,6 +1297,7 @@
                 loadData: function() {
                     const originalStr = localStorage.getItem('originalReportData');
                     const editedStr = localStorage.getItem('editedReportData');
+                    const advicesStr = localStorage.getItem('selectedAdvices');
 
                     if (originalStr) {
                         this.original = JSON.parse(originalStr);
@@ -1019,6 +1305,389 @@
                     if (editedStr) {
                         this.edited = JSON.parse(editedStr);
                     }
+                    if (advicesStr) {
+                        this.advices = JSON.parse(advicesStr);
+                    }
+                }
+            },
+
+            // アドバイスマスターデータ
+            adviceMaster: {
+                hypertension: {
+                    label: '高血圧生活指導',
+                    content: '減塩食や適度な運動を心がけましょう。'
+                },
+                diabetes: {
+                    label: '糖尿病生活指導',
+                    content: '間食を控えるように。服薬中の方は低血糖症状にも要注意。'
+                },
+                kidney: {
+                    label: '腎臓病生活指導',
+                    content: '血圧コントロール、たんぱく質制限、カリウムの多い食べ物を控えるように。'
+                },
+                lipid: {
+                    label: '脂質代謝異常症',
+                    content: '食事バランスを良くし、運動をするように。'
+                },
+                dementia: {
+                    label: '物忘れ指導',
+                    content: '服薬の見守りなど細かい介護にて対応。気分の変化などに留意しましょう。'
+                },
+                fall_prevention: {
+                    label: '転倒予防指導',
+                    content: '日常生活の中で歩行訓練をし、転倒に十分注意しましょう。'
+                },
+                bedridden: {
+                    label: '寝たきり指導',
+                    content: '拘縮予防、褥瘡防止、長時間同じ姿勢を取らないように。'
+                },
+                malnutrition: {
+                    label: '低栄養指導',
+                    content: '低栄養に対して、栄養剤の補食を指導。'
+                },
+                aspiration: {
+                    label: '誤嚥防止指導',
+                    content: '嚥下能力にあった食事形状を工夫し、食事はゆっくり摂りましょう。'
+                }
+            },
+
+            // アドバイスセレクター
+            adviceSelector: {
+                maxSelection: 3,
+                selectedAdvices: [],
+                dropdownOpen: false,
+
+                // 初期化
+                init: function() {
+                    console.log('[AdviceSelector] 初期化開始');
+                    this.loadSelectedAdvices();
+                    this.setupEventListeners();
+                    this.renderDropdownOptions();
+                    this.renderTags();
+                    this.updateAdviceDisplay();
+                },
+
+                // 選択済みアドバイスをロード
+                loadSelectedAdvices: function() {
+                    // dataManagerから既存の選択を取得
+                    const advices = window.KyotakuReportTemplate.dataManager.advices;
+                    if (advices && advices.length > 0) {
+                        this.selectedAdvices = advices;
+                    } else {
+                        // 現在表示されているアドバイスから初期値を作成
+                        const visibleAdvices = document.querySelectorAll('.advice-item[style*="flex"]');
+                        visibleAdvices.forEach((element, index) => {
+                            const key = element.getAttribute('data-advice');
+                            if (key && window.KyotakuReportTemplate.adviceMaster[key]) {
+                                this.selectedAdvices.push({
+                                    key: key,
+                                    label: window.KyotakuReportTemplate.adviceMaster[key].label,
+                                    content: window.KyotakuReportTemplate.adviceMaster[key].content,
+                                    customContent: null,
+                                    order: index
+                                });
+                            }
+                        });
+                    }
+                },
+
+                // イベントリスナー設定
+                setupEventListeners: function() {
+                    const searchInput = document.querySelector('.advice-search');
+                    const dropdownList = document.querySelector('.advice-dropdown-list');
+
+                    if (searchInput) {
+                        // フォーカス時にドロップダウンを開く
+                        searchInput.addEventListener('focus', () => {
+                            this.openDropdown();
+                        });
+
+                        // 検索入力
+                        searchInput.addEventListener('input', (e) => {
+                            this.filterOptions(e.target.value);
+                        });
+
+                        // キーボードナビゲーション
+                        searchInput.addEventListener('keydown', (e) => {
+                            this.handleKeyboardNavigation(e);
+                        });
+                    }
+
+                    // ドロップダウン外クリックで閉じる
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('.advice-dropdown-wrapper')) {
+                            this.closeDropdown();
+                        }
+                    });
+                },
+
+                // ドロップダウンオプションを生成
+                renderDropdownOptions: function() {
+                    const dropdownList = document.querySelector('.advice-dropdown-list');
+                    if (!dropdownList) return;
+
+                    dropdownList.innerHTML = '';
+
+                    Object.entries(window.KyotakuReportTemplate.adviceMaster).forEach(([key, data]) => {
+                        const isSelected = this.selectedAdvices.find(a => a.key === key);
+                        const isDisabled = !isSelected && this.selectedAdvices.length >= this.maxSelection;
+
+                        const option = document.createElement('div');
+                        option.className = 'advice-option';
+                        option.setAttribute('data-key', key);
+                        option.setAttribute('role', 'option');
+                        option.tabIndex = -1;
+
+                        if (isSelected) {
+                            option.classList.add('selected');
+                            option.setAttribute('aria-selected', 'true');
+                        } else if (isDisabled) {
+                            option.classList.add('disabled');
+                            option.setAttribute('aria-disabled', 'true');
+                        }
+
+                        option.innerHTML = `
+                            <div class="advice-option-label">${data.label}</div>
+                            <div class="advice-option-content">${data.content}</div>
+                        `;
+
+                        if (!isSelected && !isDisabled) {
+                            option.addEventListener('click', () => {
+                                this.addAdvice(key);
+                            });
+                        }
+
+                        dropdownList.appendChild(option);
+                    });
+                },
+
+                // アドバイスを追加
+                addAdvice: function(key) {
+                    if (this.selectedAdvices.length >= this.maxSelection) {
+                        this.showMessage('最大3つまで選択可能です');
+                        return;
+                    }
+
+                    const adviceData = window.KyotakuReportTemplate.adviceMaster[key];
+                    if (!adviceData) return;
+
+                    const advice = {
+                        key: key,
+                        label: adviceData.label,
+                        content: adviceData.content,
+                        customContent: null,
+                        order: this.selectedAdvices.length
+                    };
+
+                    this.selectedAdvices.push(advice);
+                    this.renderTags();
+                    this.renderDropdownOptions();
+                    this.updateCounter();
+                    this.updateAdviceDisplay();
+                    this.saveToDataManager();
+
+                    // 検索フィールドをクリア
+                    const searchInput = document.querySelector('.advice-search');
+                    if (searchInput) {
+                        searchInput.value = '';
+                    }
+                },
+
+                // アドバイスを削除
+                removeAdvice: function(index) {
+                    this.selectedAdvices.splice(index, 1);
+                    this.reorderAdvices();
+                    this.renderTags();
+                    this.renderDropdownOptions();
+                    this.updateCounter();
+                    this.updateAdviceDisplay();
+                    this.saveToDataManager();
+                },
+
+                // 順序を再設定
+                reorderAdvices: function() {
+                    this.selectedAdvices.forEach((advice, index) => {
+                        advice.order = index;
+                    });
+                },
+
+                // タグを表示
+                renderTags: function() {
+                    const container = document.querySelector('.selected-advice-tags');
+                    if (!container) return;
+
+                    container.innerHTML = '';
+
+                    this.selectedAdvices.forEach((advice, index) => {
+                        const tag = document.createElement('div');
+                        tag.className = 'advice-tag';
+                        tag.innerHTML = `
+                            <span class="tag-text">${advice.label}</span>
+                            <button class="tag-remove" aria-label="${advice.label}を削除">×</button>
+                        `;
+
+                        const removeBtn = tag.querySelector('.tag-remove');
+                        removeBtn.addEventListener('click', () => {
+                            this.removeAdvice(index);
+                        });
+
+                        container.appendChild(tag);
+                    });
+                },
+
+                // カウンター更新
+                updateCounter: function() {
+                    const counterCurrent = document.querySelector('.counter-current');
+                    const counterElement = document.querySelector('.advice-counter');
+                    const searchInput = document.querySelector('.advice-search');
+
+                    if (counterCurrent) {
+                        counterCurrent.textContent = this.selectedAdvices.length;
+                    }
+
+                    if (counterElement) {
+                        if (this.selectedAdvices.length >= this.maxSelection) {
+                            counterElement.classList.add('max-reached');
+                            if (searchInput) {
+                                searchInput.disabled = true;
+                                searchInput.placeholder = '最大3つまで選択済み';
+                            }
+                        } else {
+                            counterElement.classList.remove('max-reached');
+                            if (searchInput) {
+                                searchInput.disabled = false;
+                                searchInput.placeholder = 'アドバイスを検索または選択...';
+                            }
+                        }
+                    }
+                },
+
+                // アドバイス表示を更新
+                updateAdviceDisplay: function() {
+                    // すべてのアドバイスを非表示
+                    document.querySelectorAll('.advice-item').forEach(item => {
+                        item.style.display = 'none';
+                    });
+
+                    // 選択されたアドバイスを表示
+                    this.selectedAdvices.forEach(advice => {
+                        const element = document.querySelector(`[data-advice="${advice.key}"]`);
+                        if (element) {
+                            element.style.display = 'flex';
+                            element.style.order = advice.order;
+
+                            // カスタムコンテンツがある場合は更新
+                            if (advice.customContent) {
+                                const contentEl = element.querySelector('.advice-content');
+                                if (contentEl) {
+                                    contentEl.textContent = advice.customContent;
+                                }
+                            }
+                        }
+                    });
+                },
+
+                // DataManagerに保存
+                saveToDataManager: function() {
+                    window.KyotakuReportTemplate.dataManager.saveAdvices(this.selectedAdvices);
+                },
+
+                // ドロップダウンを開く
+                openDropdown: function() {
+                    const dropdownList = document.querySelector('.advice-dropdown-list');
+                    const searchInput = document.querySelector('.advice-search');
+
+                    if (this.selectedAdvices.length >= this.maxSelection) {
+                        return;
+                    }
+
+                    if (dropdownList) {
+                        dropdownList.style.display = 'block';
+                        this.dropdownOpen = true;
+                    }
+
+                    if (searchInput) {
+                        searchInput.setAttribute('aria-expanded', 'true');
+                    }
+                },
+
+                // ドロップダウンを閉じる
+                closeDropdown: function() {
+                    const dropdownList = document.querySelector('.advice-dropdown-list');
+                    const searchInput = document.querySelector('.advice-search');
+
+                    if (dropdownList) {
+                        dropdownList.style.display = 'none';
+                        this.dropdownOpen = false;
+                    }
+
+                    if (searchInput) {
+                        searchInput.setAttribute('aria-expanded', 'false');
+                    }
+                },
+
+                // オプションをフィルター
+                filterOptions: function(query) {
+                    const options = document.querySelectorAll('.advice-option');
+                    const lowerQuery = query.toLowerCase();
+
+                    options.forEach(option => {
+                        const label = option.querySelector('.advice-option-label').textContent;
+                        const content = option.querySelector('.advice-option-content').textContent;
+
+                        if (label.toLowerCase().includes(lowerQuery) ||
+                            content.toLowerCase().includes(lowerQuery)) {
+                            option.style.display = 'block';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+                },
+
+                // キーボードナビゲーション
+                handleKeyboardNavigation: function(e) {
+                    const options = document.querySelectorAll('.advice-option:not(.selected):not(.disabled)');
+                    const visibleOptions = Array.from(options).filter(o => o.style.display !== 'none');
+
+                    if (visibleOptions.length === 0) return;
+
+                    let currentIndex = -1;
+                    const focusedOption = document.querySelector('.advice-option:focus');
+                    if (focusedOption) {
+                        currentIndex = visibleOptions.indexOf(focusedOption);
+                    }
+
+                    switch(e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            currentIndex = (currentIndex + 1) % visibleOptions.length;
+                            visibleOptions[currentIndex].focus();
+                            break;
+
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            currentIndex = currentIndex - 1 < 0 ? visibleOptions.length - 1 : currentIndex - 1;
+                            visibleOptions[currentIndex].focus();
+                            break;
+
+                        case 'Enter':
+                            e.preventDefault();
+                            if (focusedOption) {
+                                const key = focusedOption.getAttribute('data-key');
+                                this.addAdvice(key);
+                            }
+                            break;
+
+                        case 'Escape':
+                            e.preventDefault();
+                            this.closeDropdown();
+                            break;
+                    }
+                },
+
+                // メッセージ表示
+                showMessage: function(message) {
+                    window.KyotakuReportTemplate.showValidationMessage(message);
                 }
             },
 
@@ -1040,6 +1709,9 @@
 
                 // 編集可能要素にクラスを追加
                 this.markEditableFields();
+
+                // アドバイスセレクターの初期化
+                this.adviceSelector.init();
 
                 console.log('[EditMode] 初期化完了');
             },
@@ -1113,6 +1785,7 @@
                 const resetBtn = document.getElementById('resetData');
                 const saveBtn = document.getElementById('saveChanges');
                 const editText = toggleBtn.querySelector('.edit-text');
+                const adviceSelector = document.querySelector('.advice-selector-container');
 
                 if (this.isEditMode) {
                     console.log('[EditMode] 編集モードON');
@@ -1122,6 +1795,12 @@
                     editText.textContent = '閲覧モード';
                     resetBtn.style.display = 'flex';
                     saveBtn.style.display = 'flex';
+
+                    // アドバイスセレクターを表示
+                    if (adviceSelector) {
+                        adviceSelector.style.display = 'block';
+                        this.adviceSelector.updateCounter();
+                    }
 
                     // フィールドを編集可能に
                     this.enableEditing();
@@ -1134,6 +1813,12 @@
                     editText.textContent = '編集モード';
                     resetBtn.style.display = 'none';
                     saveBtn.style.display = 'none';
+
+                    // アドバイスセレクターを非表示
+                    if (adviceSelector) {
+                        adviceSelector.style.display = 'none';
+                        this.adviceSelector.closeDropdown();
+                    }
 
                     // フィールドを編集不可に
                     this.disableEditing();
@@ -1315,6 +2000,14 @@
                     }
                 });
 
+                // アドバイスセレクターもリセット
+                this.adviceSelector.selectedAdvices = [];
+                this.adviceSelector.loadSelectedAdvices(); // 元の状態を再ロード
+                this.adviceSelector.renderTags();
+                this.adviceSelector.renderDropdownOptions();
+                this.adviceSelector.updateCounter();
+                this.adviceSelector.updateAdviceDisplay();
+
                 this.updateSaveStatus('リセット完了');
             },
 
@@ -1331,8 +2024,16 @@
                     ...this.dataManager.edited
                 };
 
+                // アドバイスデータを追加
+                if (this.adviceSelector.selectedAdvices.length > 0) {
+                    finalData.advices = this.adviceSelector.selectedAdvices.map(a => a.key);
+                }
+
                 // LocalStorageの更新
                 localStorage.setItem('kyotakuReportData', JSON.stringify(finalData));
+
+                // アドバイス選択も保存
+                this.adviceSelector.saveToDataManager();
 
                 this.updateSaveStatus('保存完了');
 
