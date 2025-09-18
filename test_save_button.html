@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保存ボタン機能テスト</title>
+    <style>
+        body {
+            font-family: 'Yu Gothic', sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .test-button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 居宅療養管理指導報告書 保存機能テスト</h1>
+
+    <div class="test-section">
+        <h2>📋 実装内容の確認</h2>
+        <ul>
+            <li>✅ 保存ボタンの表示（編集モード時）</li>
+            <li>✅ データ収集関数（collectReportData）</li>
+            <li>✅ API呼び出し（/api/ai/save-kyotaku-report）</li>
+            <li>✅ UIフィードバック（保存中・成功・エラー表示）</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 テスト手順</h2>
+        <ol>
+            <li>AI報告書作成ページ（<a href="/ai_report.html" target="_blank">/ai_report.html</a>）を開く</li>
+            <li>患者を選択して「次へ」をクリック</li>
+            <li>カルテ内容を入力して「この内容でレポートをAI生成する」をクリック</li>
+            <li>生成完了後、報告書プレビューが新しいタブで開く</li>
+            <li>プレビュー画面で「編集モード」ボタンをクリック</li>
+            <li><strong>「この内容で保存」ボタンが表示されることを確認</strong></li>
+            <li>ボタンをクリックしてPDF保存処理を実行</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 API直接テスト</h2>
+        <button class="test-button" onclick="testAPI()">APIテスト実行</button>
+        <div id="apiResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📂 ファイル確認</h2>
+        <p>保存されたPDFファイルは以下のパスに格納されます：</p>
+        <code>C:\Users\hyosh\Desktop\allright\ageagekun\patients\[患者ID]\[日付]居宅療養管理指導報告書.pdf</code>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'テスト実行中...';
+
+            const testData = {
+                reportData: {
+                    patientId: '99999997',
+                    patientName: 'テスト花子',
+                    address: '東京都新宿区1-1-1',
+                    content: 'テスト用の報告内容です。',
+                    observations: '特記事項なし',
+                    author: 'テスト医師',
+                    facility: 'テストクリニック'
+                },
+                patientId: '99999997'
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/ai/save-kyotaku-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <h3 class="success">✅ テスト成功</h3>
+                        <p><strong>ファイルID:</strong> ${result.data.fileId}</p>
+                        <p><strong>ファイル名:</strong> ${result.data.fileName}</p>
+                        <p><strong>保存先:</strong> ${result.data.filePath}</p>
+                        <p><strong>作成日時:</strong> ${new Date(result.data.createdAt).toLocaleString('ja-JP')}</p>
+                    `;
+                } else {
+                    throw new Error(result.error || 'API呼び出しに失敗しました');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 class="error">❌ テスト失敗</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,8 @@
 const AIService = require('../services/aiService');
 const db = require('../config/database');
+const pdfService = require('../services/pdfService');
+const documentsController = require('./documentsController');
+const formatters = require('../utils/formatters');
 
 const aiService = new AIService();
 
@@ -109,6 +112,81 @@ const generateKyotakuReport = async (req, res) => {
 };
 
 /**
+ * 居宅療養管理指導報告書のPDF保存
+ */
+const saveKyotakuReport = async (req, res) => {
+  try {
+    const { reportData, patientId, html } = req.body;
+
+    // 入力検証
+    if (!reportData || !patientId) {
+      return res.status(400).json({
+        success: false,
+        error: 'reportData and patientId are required'
+      });
+    }
+
+    // 患者IDをフォーマット
+    const formattedPatientId = formatters.formatPatientId(patientId);
+
+    // ファイル名生成
+    const fileName = formatters.generateFileName();
+
+    // PDF生成とファイル保存 - HTMLがある場合は新しいメソッドを使用
+    const pdfResult = html
+      ? await pdfService.createPdfFromHtml(html, formattedPatientId)
+      : await pdfService.createKyotakuReportPDF(reportData, formattedPatientId);
+
+    // Documentsテーブルに登録
+    const client = await db.getClient();
+
+    try {
+      await client.query('BEGIN');
+
+      const insertQuery = `
+        INSERT INTO Documents (fileName, patientID, Category, FileType, pass, base_dir, isUploaded, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, false, CURRENT_TIMESTAMP)
+        RETURNING fileID, fileName, patientID, Category, FileType, pass, base_dir, isUploaded, created_at
+      `;
+
+      const { patientDir, fullPath } = formatters.buildFilePath(formattedPatientId, fileName);
+      const values = [fileName, patientId, '居宅', 'pdf', pdfResult.fullPath, patientDir];
+
+      const dbResult = await client.query(insertQuery, values);
+
+      await client.query('COMMIT');
+
+      res.status(201).json({
+        success: true,
+        data: {
+          fileId: dbResult.rows[0].fileid,
+          fileName: fileName,
+          filePath: pdfResult.fullPath,
+          patientId: patientId,
+          category: '居宅',
+          fileType: 'pdf',
+          createdAt: dbResult.rows[0].created_at
+        },
+        message: 'Kyotaku report PDF saved successfully'
+      });
+
+    } catch (dbError) {
+      await client.query('ROLLBACK');
+      throw dbError;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('Error saving Kyotaku report PDF:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save Kyotaku report PDF'
+    });
+  }
+};
+
+/**
  * APIキーの状態確認
  */
 const checkApiStatus = async (req, res) => {
@@ -125,5 +203,6 @@ const checkApiStatus = async (req, res) => {
 
 module.exports = {
   generateKyotakuReport,
+  saveKyotakuReport,
   checkApiStatus
 };

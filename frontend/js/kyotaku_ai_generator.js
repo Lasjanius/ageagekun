@@ -267,24 +267,26 @@ class KyotakuAIGenerator {
      */
     async saveReport(data) {
         try {
-            const response = await fetch('/api/save-kyotaku-report', {
+            this.showNotification('PDF生成・保存中...', 'info');
+
+            const response = await fetch('/api/ai/save-kyotaku-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    patient_id: data.patient_id,
-                    report_data: data,
-                    generated_date: new Date().toISOString()
+                    reportData: data,
+                    patientId: data.patient_id
                 })
             });
 
-            if (response.ok) {
-                this.showNotification('居宅療養管理指導書を保存しました', 'success');
-                // 保存後にDocumentsテーブルに登録
-                await this.registerToDocuments(data);
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                this.showNotification('居宅療養管理指導書PDFを保存しました', 'success');
+                console.log('保存結果:', result.data);
             } else {
-                throw new Error('保存に失敗しました');
+                throw new Error(result.error || '保存に失敗しました');
             }
         } catch (error) {
             console.error('保存エラー:', error);
@@ -292,36 +294,6 @@ class KyotakuAIGenerator {
         }
     }
 
-    /**
-     * Documentsテーブルへの登録
-     */
-    async registerToDocuments(data) {
-        const fileName = `居宅療養管理指導書_${data.patient_name}_${new Date().toISOString().split('T')[0]}.pdf`;
-        const filePath = `C:\\Users\\hyosh\\Desktop\\allright\\ageagekun\\patients\\${data.patient_id}\\${fileName}`;
-
-        try {
-            const response = await fetch('/api/register-document', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    fileName: fileName,
-                    patientID: data.patient_id,
-                    Category: '居宅',
-                    FileType: 'PDF',
-                    pass: filePath,
-                    base_dir: `C:\\Users\\hyosh\\Desktop\\allright\\ageagekun\\patients\\${data.patient_id}`
-                })
-            });
-
-            if (!response.ok) {
-                console.error('Documents登録エラー');
-            }
-        } catch (error) {
-            console.error('Documents登録エラー:', error);
-        }
-    }
 
     /**
      * PDF出力（要ライブラリ）

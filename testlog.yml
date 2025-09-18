@@ -1,13 +1,47 @@
-kyotaku_report_template.html?patientId=99999998:659 LocalStorageから報告書データを読み込みました: Object
-kyotaku_report_template.html?patientId=99999998:572 報告書データを適用中: Object
-kyotaku_report_template.html?patientId=99999998:634 Setting patient_name: "田中花子"
-kyotaku_report_template.html?patientId=99999998:634 Setting cm_name: "ケアマネB"
-kyotaku_report_template.html?patientId=99999998:634 Setting homecare_office_name: "訪問看護ステーションB"
-kyotaku_report_template.html?patientId=99999998:634 Setting homecare_office_address: "東京都港区1-1-1"
-kyotaku_report_template.html?patientId=99999998:634 Setting period: "2025年9月1日"
-kyotaku_report_template.html?patientId=99999998:634 Setting period: "2025年9月30日"
-kyotaku_report_template.html?patientId=99999998:634 Setting care_level: "要介護3"
-kyotaku_report_template.html?patientId=99999998:634 Setting primary_disease: "アルツハイマー型認知症"
-kyotaku_report_template.html?patientId=99999998:634 Setting exam_date: "2024年9月18日"
-kyotaku_report_template.html?patientId=99999998:634 Setting next_exam_date: "2025年10月2日"
-report_generator.js:111 Report generated successfully: Object
+kyotaku_report_template.html:1039 [Migration] 既に移行済みです
+report_generator.js:248 [report_generator.js] DOMContentLoaded - 初期化開始
+report_generator.js:253 [report_generator.js] ✅ LocalStorageデータが存在します。
+report_generator.js:254 [report_generator.js] ✅ kyotaku_report_template.htmlの処理に委譲します。
+kyotaku_report_template.html:2179 [kyotaku_report_template.html] DOMContentLoaded イベント発火
+kyotaku_report_template.html:2180 [kyotaku_report_template.html] report_generator.js の状態: 未読み込み
+kyotaku_report_template.html:1263 [KyotakuReportTemplate.init] 初期化処理開始
+kyotaku_report_template.html:1210 LocalStorageから報告書データを読み込みました: Object
+kyotaku_report_template.html:1268 [KyotakuReportTemplate.init] ✅ LocalStorageからデータを適用します
+kyotaku_report_template.html:1269 [KyotakuReportTemplate.init] データソース: AI報告書生成画面
+kyotaku_report_template.html:1073 [KyotakuReportTemplate.applyData] 報告書データを適用中: Object
+kyotaku_report_template.html:1074 [KyotakuReportTemplate.applyData] 処理を開始します
+kyotaku_report_template.html:1075 [KyotakuReportTemplate.applyData] officeAddress値: 〒100-0001 東京都千代田区千代田1-1-1
+kyotaku_report_template.html:1076 [KyotakuReportTemplate.applyData] primaryDisease値: 高血圧
+kyotaku_report_template.html:1077 [KyotakuReportTemplate.applyData] nextExamDate値: 
+kyotaku_report_template.html:1131 [KyotakuReportTemplate.applyData] advices配列が空です。デフォルトのアドバイスを表示します
+kyotaku_report_template.html:1184 Setting patient_name: "テスト太郎"
+kyotaku_report_template.html:1184 Setting cm_name: "ケアマネA"
+kyotaku_report_template.html:1184 Setting homecare_office_name: "Care Plan Center A"
+kyotaku_report_template.html:1184 Setting homecare_office_address: "〒100-0001 東京都千代田区千代田1-1-1"
+kyotaku_report_template.html:1184 Setting period: "2025年9月1日"
+kyotaku_report_template.html:1184 Setting period: "2025年9月30日"
+kyotaku_report_template.html:1184 Setting care_level: "要介護3"
+kyotaku_report_template.html:1184 Setting primary_disease: "高血圧"
+kyotaku_report_template.html:1184 Setting exam_date: "2025年9月18日"
+kyotaku_report_template.html:1184 Setting next_exam_date: ""
+kyotaku_report_template.html:1196 [KyotakuReportTemplate.applyData] 期間を設定: 2025年9月1日 ～ 2025年9月30日
+kyotaku_report_template.html:1769 [EditMode] 初期化開始
+kyotaku_report_template.html:1307 [DataManager] データ初期化完了: Object
+kyotaku_report_template.html:1435 [AdviceSelector] 初期化開始
+kyotaku_report_template.html:1783 [EditMode] 初期化完了
+kyotaku_report_template.html:1846 [EditMode] 編集モードON
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年
+kyotaku_report_template.html:1319 [DataManager] 自動保存完了
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年1
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年10
+kyotaku_report_template.html:1319 [DataManager] 自動保存完了
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年10月
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年10月2
+kyotaku_report_template.html:1319 [DataManager] 自動保存完了
+kyotaku_report_template.html:1330 [DataManager] フィールド更新: next_exam_date = 2025年10月2日
+kyotaku_report_template.html:1319 [DataManager] 自動保存完了
+kyotaku_report_template.html:2111 保存データ: Object
+:3000/api/ai/save-kyotaku-report:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+kyotaku_report_template.html:2140 保存エラー: Error: reportData and patientId are required
+    at Object.saveAllEdits (kyotaku_report_template.html:2137:31)
+saveAllEdits @ kyotaku_report_template.html:2140

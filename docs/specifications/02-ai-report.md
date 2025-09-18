@@ -266,7 +266,121 @@ selectedAdvices: [
 - スライドインアニメーション
 - レスポンシブデザイン（モバイル対応）
 
+## ポップアップブロッカー対策（v2.1.1 新機能）
+
+### 概要
+ブラウザのポップアップブロッカーを回避するため、**Open-Firstパターン**を採用。ユーザーのクリック直後に新しいタブを開き、その後非同期処理を実行。
+
+## データフロー簡略化（v2.1.2 新機能）
+
+### 概要
+編集機能のデータ管理を3層構造から1層構造にリファクタリング。リアルタイム自動保存により、ユーザーが混乱しない直感的な操作を実現。
+
+### Before vs After
+
+#### Before（v2.1.1まで）
+```javascript
+dataManager: {
+    original: {},    // AI生成時のオリジナルデータ
+    edited: {},      // ユーザー編集データ（分離管理）
+    advices: []      // 選択されたアドバイス
+}
+
+// 編集時の複雑なフロー
+1. ユーザー入力 → edited に保存
+2. 「保存」ボタン → original と edited をマージ
+3. kyotakuReportData に最終保存
+```
+
+#### After（v2.1.2以降）
+```javascript
+dataManager: {
+    current: {}      // 単一データソース
+}
+
+// シンプルなフロー
+1. ユーザー入力 → current に直接更新
+2. デバウンス300ms → LocalStorage自動保存
+3. 編集/閲覧は表示モードの切替のみ
+```
+
+### 実装詳細
+
+#### リアルタイム自動保存
+```javascript
+// デバウンス付き保存（300ms遅延）
+debouncedSave: debounce(function() {
+    localStorage.setItem('kyotakuReportData', JSON.stringify(dataManager.current));
+    updateSaveStatus('自動保存済み');
+}, 300)
+
+// フィールド更新時
+updateField: function(field, value) {
+    this.current[field] = value;
+    this.debouncedSave();
+}
+```
+
+#### 安全な移行処理
+```javascript
+function migrateDataIfNeeded() {
+    if (localStorage.getItem('migration_v2_1_2_completed')) return;
+
+    const original = JSON.parse(localStorage.getItem('originalReportData') || '{}');
+    const edited = JSON.parse(localStorage.getItem('editedReportData') || '{}');
+    const current = JSON.parse(localStorage.getItem('kyotakuReportData') || '{}');
+
+    // 既存データを優先してマージ
+    const finalData = Object.keys(current).length > 0 ? current : {...original, ...edited};
+
+    localStorage.setItem('kyotakuReportData', JSON.stringify(finalData));
+    localStorage.setItem('migration_v2_1_2_completed', Date.now().toString());
+}
+```
+
+#### ボタン機能の簡略化
+- **編集/閲覧ボタン**: 表示モードの切替のみ（データ操作なし）
+- **リセットボタン**: 削除（混乱を避けるため）
+- **保存ボタン**: 非表示（将来のDB保存機能用に保持）
+
+### 利点
+1. **直感的操作**: 編集すれば自動保存
+2. **混乱の排除**: 「編集したのに保存してない」状況がなくなる
+3. **パフォーマンス**: デバウンスによりLocalStorage負荷軽減
+4. **安全性**: 既存データを壊さない移行処理
+
+### 実装詳細
+
+#### Open-Firstパターン
+```javascript
+// 1. クリック直後に新タブを開く（同期的）
+const reportWindow = window.open('about:blank', '_blank');
+
+// 2. ローディング画面を表示
+reportWindow.document.write(loadingHTML);
+
+// 3. 非同期AI処理を実行
+const aiData = await this.callAIAPI(reportData);
+
+// 4. 処理完了後、既存のタブにナビゲート
+reportWindow.location.href = reportUrl;
+```
+
+#### ローディング画面
+- スピナーアニメーション付き
+- 「報告書を生成中...」メッセージ
+- プロフェッショナルなデザイン
+
+#### エラー処理
+- ポップアップブロック検出
+- 親切なエラーメッセージ表示
+- エラー時の自動ウィンドウクローズ
+
 ## エラーハンドリング
+
+### ポップアップブロック
+- エラーメッセージ: "ポップアップがブロックされています。ポップアップを許可してください。"
+- 対処: ブラウザのポップアップ設定を確認
 
 ### APIキー未設定
 - エラーメッセージ: "OpenAI APIキーが設定されていません"
@@ -278,7 +392,188 @@ selectedAdvices: [
 
 ### AI生成エラー
 - トースト通知でエラー表示
+- 開いたウィンドウを自動クローズ
 - 処理は継続（アプリケーションは停止しない）
+
+## PDF保存機能（v2.2.0 新機能）
+
+### 概要
+生成・編集した居宅療養管理指導報告書をPDFとして保存し、Documentsテーブルに登録する機能。プレビュー画面と完全に一致したPDFを生成。
+
+### 保存フロー
+
+#### ワークフロー
+1. 報告書の生成・編集完了
+2. 「この内容で保存」ボタンをクリック
+3. プレビューHTMLをそのままPDF化
+4. ローカルファイルシステムに保存
+5. Documentsテーブルに登録
+6. 2秒後に患者選択画面へ自動遷移
+
+### 技術仕様
+
+#### WYSIWYG PDF生成
+プレビュー画面で見たとおりのPDFを生成するため、HTMLをそのままPDF化する方式を採用。
+
+##### フロントエンド処理
+```javascript
+exportReportHtml: function() {
+    // DOM全体を複製
+    const clonedDocument = document.documentElement.cloneNode(true);
+
+    // 編集UI要素を削除
+    const elementsToRemove = clonedDocument.querySelectorAll([
+        '.no-print',
+        '.edit-controls',
+        '.save-status',
+        '.save-button',
+        '[data-advice-selector]',
+        'script'
+    ].join(','));
+
+    elementsToRemove.forEach(element => element.remove());
+
+    // contenteditable属性を削除
+    const editableElements = clonedDocument.querySelectorAll('[contenteditable]');
+    editableElements.forEach(element => {
+        element.removeAttribute('contenteditable');
+    });
+
+    return '<!DOCTYPE html>\n' + clonedDocument.outerHTML;
+}
+```
+
+##### バックエンド処理
+```javascript
+// pdfService.js
+async createPdfFromHtml(htmlContent, patientId) {
+    const { patientDir, fullPath } = formatters.buildFilePath(
+        patientId,
+        formatters.generateFileName()
+    );
+
+    // Puppeteerで直接PDF化
+    const result = await this.savePDFToFile(htmlContent, fullPath);
+
+    return {
+        fileName: path.basename(fullPath),
+        patientDir,
+        fullPath: result.filePath
+    };
+}
+```
+
+#### データベース登録
+```sql
+INSERT INTO Documents (
+    fileName,
+    patientID,
+    Category,
+    FileType,
+    pass,
+    base_dir,
+    isUploaded,
+    created_at
+) VALUES (
+    '20250918居宅療養管理指導報告書.pdf',
+    '99999999',
+    '居宅',
+    'pdf',
+    'C:\\path\\to\\file.pdf',
+    'C:\\path\\to\\directory',
+    false,
+    CURRENT_TIMESTAMP
+)
+```
+
+### API仕様
+
+#### エンドポイント
+```javascript
+POST /api/ai/save-kyotaku-report
+Content-Type: application/json
+
+{
+    "reportData": { // 報告書データ（後方互換性用）
+        "patientId": "99999999",
+        "patientName": "田中太郎",
+        "content": "診療内容...",
+        // ...
+    },
+    "patientId": "99999999",
+    "html": "<!DOCTYPE html>..." // プレビューHTML全体
+}
+
+Response:
+{
+    "success": true,
+    "data": {
+        "fileId": 12,
+        "fileName": "20250918居宅療養管理指導報告書.pdf",
+        "filePath": "C:\\Users\\...\\patients\\99999999\\20250918居宅療養管理指導報告書.pdf",
+        "patientId": "99999999",
+        "category": "居宅",
+        "fileType": "pdf",
+        "createdAt": "2025-09-18T10:12:15.383Z"
+    },
+    "message": "Kyotaku report PDF saved successfully"
+}
+```
+
+### 実装上の考慮事項
+
+#### パフォーマンス最適化
+1. **HTMLサイズ制限**: Expressのボディサイズを1MBに拡張
+```javascript
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+```
+
+2. **不要要素の削除**: 編集UI要素をPDF化前に除去
+3. **Puppeteerブラウザ再利用**: シングルトンパターンで起動コスト削減
+
+#### 日本語対応
+- Puppeteer環境での日本語フォント対応
+- インラインCSSによるフォント指定
+- 文字化け防止のためのエンコーディング管理
+
+#### セキュリティ
+- XSS防止: script要素の完全除去
+- contenteditable属性の削除
+- インタラクティブ要素の無効化
+
+### ファイル管理
+
+#### 保存先構造
+```
+patients/
+├── 99999999/
+│   ├── 20250918居宅療養管理指導報告書.pdf
+│   ├── 20250919居宅療養管理指導報告書.pdf
+│   └── uploaded/  # アップロード済みファイル
+│       └── 20250917居宅療養管理指導報告書.pdf
+```
+
+#### ファイル名規則
+- フォーマット: `YYYYMMDD居宅療養管理指導報告書.pdf`
+- 患者ID: 8桁ゼロ埋め
+- 日付: システム日付（JST）
+
+### エラーハンドリング
+
+#### PDF生成エラー
+- Puppeteer起動失敗
+- メモリ不足
+- ディスク容量不足
+
+#### データベースエラー
+- トランザクションロールバック
+- 重複ファイル名チェック
+
+#### ユーザーフィードバック
+- 保存中: ローディングアイコン表示
+- 成功: ✅ PDFを保存しました
+- エラー: ❌ 詳細なエラーメッセージ
 
 ## 実装ファイル
 
@@ -286,9 +581,11 @@ selectedAdvices: [
 - `frontend/ai_report.html` - メインページ
 - `frontend/js/ai_report_page.js` - ロジック実装
 - `frontend/css/ai_report.css` - スタイリング
-- `frontend/templates/kyotaku_report_template.html` - 報告書テンプレート
+- `frontend/templates/kyotaku_report_template.html` - 報告書テンプレート（編集・PDF保存機能含む）
 
 ### バックエンド
 - `backend/services/aiService.js` - AI処理サービス
-- `backend/controllers/aiController.js` - APIコントローラー
+- `backend/services/pdfService.js` - PDF生成サービス（Puppeteer使用）
+- `backend/controllers/aiController.js` - APIコントローラー（PDF保存機能含む）
 - `backend/routes/ai.js` - ルーティング定義
+- `backend/utils/formatters.js` - ファイル名・パス生成ユーティリティ

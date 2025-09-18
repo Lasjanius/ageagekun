@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the "ageagekun" (あげあげくん) project - a document upload automation system for the モバカルネット (Mobakal Net) medical records system. The project automates the process of uploading patient documents to the electronic medical records platform and generates medical reports.
 
+## Product Requirements Documentation
+
+**重要**: システムの詳細仕様については `docs/PRD.md` を参照してください。PRD.mdは全仕様書へのマスターインデックスとして機能し、各機能の詳細は個別のドキュメントに分割されています。
+
 ## Directory Structure
 ```
 allright/

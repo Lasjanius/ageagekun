@@ -827,17 +827,13 @@
             <span class="edit-icon">✏️</span>
             <span class="edit-text">編集モード</span>
         </button>
-        <button id="resetData" class="reset-btn" style="display: none;">
-            <span class="reset-icon">↺</span>
-            <span class="reset-text">リセット</span>
-        </button>
-        <button id="saveChanges" class="save-btn" style="display: none;">
+        <button id="saveChanges" class="save-btn">
             <span class="save-icon">💾</span>
-            <span class="save-text">保存</span>
+            <span class="save-text">この内容で保存</span>
         </button>
-        <span id="saveStatus" class="save-status">
-            <span class="status-icon">✓</span>
-            <span class="status-text">保存済み</span>
+        <span id="saveStatus" class="save-status" style="display: none;">
+            <span class="status-icon"></span>
+            <span class="status-text"></span>
         </span>
     </div>
 
@@ -869,6 +865,8 @@
 
         <!-- 患者情報 -->
         <section class="patient-section">
+            <!-- 患者ID（非表示） -->
+            <span data-field="patient_id" style="display: none;">{{patient_id}}</span>
             <div class="patient-name-row">
                 <span class="patient-name" data-field="patient_name">{{patient_name}}</span>
                 <span class="patient-name-suffix">様</span>
@@ -1019,6 +1017,57 @@
     <script src="../js/report_generator.js"></script>
 
     <script>
+        // ========================================
+        // ユーティリティ関数
+        // ========================================
+
+        // デバウンス関数（連続実行を制限）
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // データ移行処理（v2.1.1 - 3層から1層へ）
+        function migrateDataIfNeeded() {
+            // 既に移行済みならスキップ
+            if (localStorage.getItem('migration_v2_1_1_completed')) {
+                console.log('[Migration] 既に移行済みです');
+                return;
+            }
+
+            try {
+                const original = JSON.parse(localStorage.getItem('originalReportData') || '{}');
+                const edited = JSON.parse(localStorage.getItem('editedReportData') || '{}');
+                const current = JSON.parse(localStorage.getItem('kyotakuReportData') || '{}');
+
+                // 既存のkyotakuReportDataを優先、なければマージ
+                const finalData = Object.keys(current).length > 0 ? current : {...original, ...edited};
+
+                if (Object.keys(finalData).length > 0) {
+                    localStorage.setItem('kyotakuReportData', JSON.stringify(finalData));
+                    console.log('[Migration] データ移行完了:', finalData);
+                }
+
+                localStorage.setItem('migration_v2_1_1_completed', Date.now().toString());
+
+                // 古いキーは削除しない（念のため残す）
+                console.log('[Migration] v2.1.1への移行が完了しました');
+            } catch (error) {
+                console.error('[Migration] エラー:', error);
+                // エラーでもアプリは継続
+            }
+        }
+
+        // 移行処理を実行
+        migrateDataIfNeeded();
+
         // テンプレートデータバインディング用のJavaScript
         window.KyotakuReportTemplate = {
             // データをテンプレートに適用する関数
@@ -1113,6 +1162,7 @@
 
                 // フィールドマッピング（AI報告書のデータキーと表示フィールドの対応）
                 const fieldMapping = {
+                    'patientId': 'patient_id',
                     'patientName': 'patient_name',
                     'cmName': 'cm_name',
                     'officeName': 'homecare_office_name',
@@ -1247,67 +1297,93 @@
                 this.initEditMode();
             },
 
-            // データマネージャー
+            // データマネージャー（v2.1.1 - シンプル化）
             dataManager: {
-                original: {}, // オリジナルデータ
-                edited: {},   // 編集されたデータ
-                advices: [],  // 選択されたアドバイス
+                // 単一のデータソース（リアルタイム自動保存）
+                current: {},
 
-                // オリジナルデータを保存
-                saveOriginal: function(data) {
-                    this.original = {...data};
-                    localStorage.setItem('originalReportData', JSON.stringify(this.original));
-                    console.log('[DataManager] オリジナルデータ保存完了:', this.original);
+                // 初期化
+                init: function() {
+                    try {
+                        const storedData = localStorage.getItem('kyotakuReportData');
+                        this.current = storedData ? JSON.parse(storedData) : {};
+                        console.log('[DataManager] データ初期化完了:', this.current);
+                    } catch (error) {
+                        console.error('[DataManager] データ初期化エラー:', error);
+                        this.current = {};
+                    }
                 },
 
-                // 編集データを保存
-                saveEdit: function(field, value) {
-                    this.edited[field] = value;
-                    localStorage.setItem('editedReportData', JSON.stringify(this.edited));
-                    console.log('[DataManager] 編集データ保存:', field, '=', value);
-                },
+                // デバウンス付き保存（300ms遅延）
+                debouncedSave: debounce(function() {
+                    try {
+                        localStorage.setItem('kyotakuReportData', JSON.stringify(window.KyotakuReportTemplate.dataManager.current));
+                        window.KyotakuReportTemplate.updateSaveStatus('自動保存済み');
+                        console.log('[DataManager] 自動保存完了');
+                    } catch (error) {
+                        console.error('[DataManager] 保存エラー:', error);
+                        window.KyotakuReportTemplate.updateSaveStatus('保存エラー');
+                    }
+                }, 300),
 
-                // アドバイスデータを保存
-                saveAdvices: function(advices) {
-                    this.advices = advices;
-                    localStorage.setItem('selectedAdvices', JSON.stringify(this.advices));
-                    console.log('[DataManager] アドバイス保存:', this.advices);
+                // フィールド更新（リアルタイム保存）
+                updateField: function(field, value) {
+                    this.current[field] = value;
+                    this.debouncedSave();
+                    console.log('[DataManager] フィールド更新:', field, '=', value);
                 },
 
                 // 現在の値を取得
                 getValue: function(field) {
-                    return this.edited[field] !== undefined ? this.edited[field] : this.original[field];
+                    return this.current[field] || '';
                 },
 
-                // リセット
-                reset: function(field) {
-                    if (field) {
-                        delete this.edited[field];
-                        localStorage.setItem('editedReportData', JSON.stringify(this.edited));
-                        return this.original[field] || '';
-                    } else {
-                        this.edited = {};
-                        this.advices = [];
-                        localStorage.removeItem('editedReportData');
-                        localStorage.removeItem('selectedAdvices');
+                // データ全体を取得
+                getData: function() {
+                    return {...this.current};
+                },
+
+                // データ全体を設定（AI生成時）
+                setData: function(data) {
+                    this.current = {...data};
+                    this.debouncedSave();
+                    console.log('[DataManager] データ全体を設定:', this.current);
+                },
+
+                // アドバイス更新
+                updateAdvices: function(advices) {
+                    this.current.advices = advices;
+                    this.debouncedSave();
+                    console.log('[DataManager] アドバイス更新:', advices);
+                },
+
+                // 後方互換性のためのメソッド（既存コードとの互換性維持）
+                saveEdit: function(field, value) {
+                    this.updateField(field, value);
+                },
+
+                saveOriginal: function(data) {
+                    this.setData(data);
+                },
+
+                saveAdvices: function(advices) {
+                    this.updateAdvices(advices);
+                },
+
+                // リセット（AI再生成を促す）
+                reset: function() {
+                    if (confirm('AI生成をやり直しますか？')) {
+                        // 元のAI報告書生成ページに戻る
+                        window.close();
+                        return true;
                     }
+                    return false;
                 },
 
-                // データをロード
+                // 旧データロード（移行のため）
                 loadData: function() {
-                    const originalStr = localStorage.getItem('originalReportData');
-                    const editedStr = localStorage.getItem('editedReportData');
-                    const advicesStr = localStorage.getItem('selectedAdvices');
-
-                    if (originalStr) {
-                        this.original = JSON.parse(originalStr);
-                    }
-                    if (editedStr) {
-                        this.edited = JSON.parse(editedStr);
-                    }
-                    if (advicesStr) {
-                        this.advices = JSON.parse(advicesStr);
-                    }
+                    // 移行処理で既に処理済みなので何もしない
+                    console.log('[DataManager] loadData() は移行処理で処理済みです');
                 }
             },
 
@@ -1695,14 +1771,8 @@
             initEditMode: function() {
                 console.log('[EditMode] 初期化開始');
 
-                // データマネージャーのロード
-                this.dataManager.loadData();
-
-                // オリジナルデータがない場合は現在の表示データを保存
-                if (Object.keys(this.dataManager.original).length === 0) {
-                    const currentData = this.extractCurrentData();
-                    this.dataManager.saveOriginal(currentData);
-                }
+                // データマネージャーの初期化
+                this.dataManager.init();
 
                 // ボタンイベントの設定
                 this.setupEditControls();
@@ -1749,9 +1819,7 @@
             // 編集コントロールの設定
             setupEditControls: function() {
                 const toggleBtn = document.getElementById('toggleEditMode');
-                const resetBtn = document.getElementById('resetData');
                 const saveBtn = document.getElementById('saveChanges');
-                const statusElement = document.getElementById('saveStatus');
 
                 // 編集モードのトグル
                 if (toggleBtn) {
@@ -1760,16 +1828,7 @@
                     });
                 }
 
-                // リセットボタン
-                if (resetBtn) {
-                    resetBtn.addEventListener('click', () => {
-                        if (confirm('すべての編集内容をリセットしますか？')) {
-                            this.resetAllEdits();
-                        }
-                    });
-                }
-
-                // 保存ボタン
+                // 保存ボタン（将来のDB保存用）
                 if (saveBtn) {
                     saveBtn.addEventListener('click', () => {
                         this.saveAllEdits();
@@ -1782,7 +1841,6 @@
             toggleEditMode: function() {
                 this.isEditMode = !this.isEditMode;
                 const toggleBtn = document.getElementById('toggleEditMode');
-                const resetBtn = document.getElementById('resetData');
                 const saveBtn = document.getElementById('saveChanges');
                 const editText = toggleBtn.querySelector('.edit-text');
                 const adviceSelector = document.querySelector('.advice-selector-container');
@@ -1793,8 +1851,7 @@
                     // ボタンの表示切替
                     toggleBtn.classList.add('active');
                     editText.textContent = '閲覧モード';
-                    resetBtn.style.display = 'flex';
-                    saveBtn.style.display = 'flex';
+                    // 保存ボタンは常に表示（削除）
 
                     // アドバイスセレクターを表示
                     if (adviceSelector) {
@@ -1811,8 +1868,7 @@
                     // ボタンの表示切替
                     toggleBtn.classList.remove('active');
                     editText.textContent = '編集モード';
-                    resetBtn.style.display = 'none';
-                    saveBtn.style.display = 'none';
+                    // 保存ボタンは常に表示（削除）
 
                     // アドバイスセレクターを非表示
                     if (adviceSelector) {
@@ -1861,9 +1917,7 @@
                     isComposing = false;
                     setTimeout(() => {
                         const value = this.sanitizeText(e.target.innerText || e.target.textContent, field);
-                        this.dataManager.saveEdit(field, value);
-                        this.updateSaveStatus('保存中...');
-                        setTimeout(() => this.updateSaveStatus('保存済み'), 1000);
+                        this.dataManager.updateField(field, value);
                     }, 100);
                 });
 
@@ -1871,9 +1925,7 @@
                 element.addEventListener('input', (e) => {
                     if (!isComposing) {
                         const value = this.sanitizeText(e.target.innerText || e.target.textContent, field);
-                        this.dataManager.saveEdit(field, value);
-                        this.updateSaveStatus('保存中...');
-                        setTimeout(() => this.updateSaveStatus('保存済み'), 1000);
+                        this.dataManager.updateField(field, value);
                     }
                 });
 
@@ -1946,17 +1998,30 @@
             updateSaveStatus: function(message) {
                 const statusElement = document.getElementById('saveStatus');
                 const statusText = statusElement.querySelector('.status-text');
+                const statusIcon = statusElement.querySelector('.status-icon');
 
+                if (!message) {
+                    statusElement.style.display = 'none';
+                    return;
+                }
+
+                statusElement.style.display = 'flex';
                 statusText.textContent = message;
 
                 if (message === '保存中...') {
                     statusElement.classList.add('saving');
                     statusElement.classList.remove('error');
+                    statusIcon.textContent = '⏳';
                 } else if (message.includes('エラー')) {
                     statusElement.classList.add('error');
                     statusElement.classList.remove('saving');
+                    statusIcon.textContent = '❌';
+                } else if (message.includes('PDFを保存')) {
+                    statusElement.classList.remove('saving', 'error');
+                    statusIcon.textContent = '✅';
                 } else {
                     statusElement.classList.remove('saving', 'error');
+                    statusIcon.textContent = '';
                 }
             },
 
@@ -1987,60 +2052,158 @@
                 }, 3000);
             },
 
-            // すべての編集をリセット
-            resetAllEdits: function() {
-                this.dataManager.reset();
 
-                // 全フィールドを元の値に戻す
-                document.querySelectorAll('[data-field]').forEach(element => {
-                    const field = element.getAttribute('data-field');
-                    const originalValue = this.dataManager.original[field];
-                    if (originalValue !== undefined) {
-                        element.textContent = originalValue;
+            // 画面からデータを収集
+            collectReportData: function() {
+                const data = {
+                    // 患者基本情報
+                    patientId: document.querySelector('[data-field="patient_id"]')?.textContent?.trim() || '',
+                    patientName: document.querySelector('[data-field="patient_name"]')?.textContent?.trim() || '',
+                    birthdate: document.querySelector('[data-field="birthdate"]')?.textContent?.trim() || '',
+                    age: document.querySelector('[data-field="age"]')?.textContent?.trim() || '',
+                    address: document.querySelector('[data-field="address"]')?.textContent?.trim() || '',
+
+                    // ケアマネージャー情報
+                    cmName: document.querySelector('[data-field="cm_name"]')?.textContent?.trim() || '',
+                    officeName: document.querySelector('[data-field="office_name"]')?.textContent?.trim() || '',
+                    officeAddress: document.querySelector('[data-field="office_address"]')?.textContent?.trim() || '',
+
+                    // 診療情報
+                    examDate: document.querySelector('[data-field="exam_date"]')?.textContent?.trim() || '',
+                    doctorName: document.querySelector('[data-field="doctor_name"]')?.textContent?.trim() || '',
+                    nextExamDate: document.querySelector('[data-field="next_exam_date"]')?.textContent?.trim() || '',
+                    careLevel: document.querySelector('[data-field="care_level"]')?.textContent?.trim() || '',
+                    primaryDisease: document.querySelector('[data-field="primary_disease"]')?.textContent?.trim() || '',
+
+                    // 報告内容
+                    content: document.querySelector('[data-field="medical_content"]')?.textContent?.trim() || '',
+                    observations: document.querySelector('[data-field="advice_text"]')?.textContent?.trim() || '',
+
+                    // 期間情報
+                    periodStart: document.querySelector('[data-field="period_start"]')?.textContent?.trim() || '',
+                    periodEnd: document.querySelector('[data-field="period_end"]')?.textContent?.trim() || '',
+
+                    // メタ情報
+                    author: '医療従事者',
+                    facility: 'たすくホームクリニック'
+                };
+
+                // 患者IDから数値部分のみを抽出
+                const patientIdMatch = data.patientId.match(/\d+/);
+                if (patientIdMatch) {
+                    data.patient_id = patientIdMatch[0];
+                }
+
+                return data;
+            },
+
+            // PDFエクスポート用のHTMLを取得
+            exportReportHtml: function() {
+                // DOM全体を複製
+                const clonedDocument = document.documentElement.cloneNode(true);
+
+                // 不要な要素を削除
+                const elementsToRemove = clonedDocument.querySelectorAll([
+                    '.no-print',
+                    '.edit-controls',
+                    '.save-status',
+                    '.save-button',
+                    '.edit-button',
+                    '.print-button',
+                    '[data-advice-selector]',
+                    '.advice-selector'
+                ].join(','));
+
+                elementsToRemove.forEach(element => {
+                    element.remove();
+                });
+
+                // すべてのscriptタグを削除
+                const scripts = clonedDocument.querySelectorAll('script');
+                scripts.forEach(script => {
+                    script.remove();
+                });
+
+                // contenteditable属性を削除
+                const editableElements = clonedDocument.querySelectorAll('[contenteditable]');
+                editableElements.forEach(element => {
+                    element.removeAttribute('contenteditable');
+                });
+
+                // スタイルでcursorがpointerやtextになっている要素を修正
+                const interactiveElements = clonedDocument.querySelectorAll('[style*="cursor"]');
+                interactiveElements.forEach(element => {
+                    const style = element.getAttribute('style');
+                    if (style) {
+                        element.setAttribute('style', style.replace(/cursor:\s*[^;]+;?/g, ''));
                     }
                 });
 
-                // アドバイスセレクターもリセット
-                this.adviceSelector.selectedAdvices = [];
-                this.adviceSelector.loadSelectedAdvices(); // 元の状態を再ロード
-                this.adviceSelector.renderTags();
-                this.adviceSelector.renderDropdownOptions();
-                this.adviceSelector.updateCounter();
-                this.adviceSelector.updateAdviceDisplay();
+                // HTML全体を文字列として取得
+                const htmlString = '<!DOCTYPE html>\n' + clonedDocument.outerHTML;
 
-                this.updateSaveStatus('リセット完了');
+                return htmlString;
             },
 
-            // すべての編集を保存
-            saveAllEdits: function() {
+            // すべての編集を保存（DB保存とPDF生成）
+            saveAllEdits: async function() {
                 // バリデーション
                 if (!this.validateBeforeSave()) {
                     return;
                 }
 
-                // 現在の編集内容を確定
-                const finalData = {
-                    ...this.dataManager.original,
-                    ...this.dataManager.edited
-                };
+                // 保存中の表示
+                this.updateSaveStatus('保存中...');
 
-                // アドバイスデータを追加
-                if (this.adviceSelector.selectedAdvices.length > 0) {
-                    finalData.advices = this.adviceSelector.selectedAdvices.map(a => a.key);
+                try {
+                    // 画面からデータを収集
+                    const reportData = this.collectReportData();
+
+                    // PDF用のHTMLを取得
+                    const htmlContent = this.exportReportHtml();
+
+                    console.log('保存データ:', reportData);
+                    console.log('HTMLサイズ:', htmlContent.length, 'bytes');
+
+                    // APIに送信
+                    const response = await fetch('http://localhost:3000/api/ai/save-kyotaku-report', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            reportData: reportData,
+                            patientId: reportData.patient_id || reportData.patientId,
+                            html: htmlContent
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // 成功
+                        this.updateSaveStatus('✅ PDFを保存しました');
+                        console.log('保存成功:', result.data);
+
+                        // LocalStorageをクリア
+                        this.clearLocalStorage();
+
+                        // 2秒後に患者選択画面に遷移
+                        setTimeout(() => {
+                            window.location.href = '/ai_report.html';
+                        }, 2000);
+                    } else {
+                        throw new Error(result.error || '保存に失敗しました');
+                    }
+                } catch (error) {
+                    console.error('保存エラー:', error);
+                    this.updateSaveStatus('❌ 保存エラー: ' + error.message);
+
+                    // 5秒後にステータスを非表示
+                    setTimeout(() => {
+                        this.updateSaveStatus('');
+                    }, 5000);
                 }
-
-                // LocalStorageの更新
-                localStorage.setItem('kyotakuReportData', JSON.stringify(finalData));
-
-                // アドバイス選択も保存
-                this.adviceSelector.saveToDataManager();
-
-                this.updateSaveStatus('保存完了');
-
-                // 編集モードを終了
-                setTimeout(() => {
-                    this.toggleEditMode();
-                }, 1000);
             },
 
             // 保存前のバリデーション

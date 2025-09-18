@@ -53,11 +53,7 @@
                 </div>
                 <div class="ai-step" data-step="2">
                     <div class="ai-step-number">2</div>
-                    <div class="ai-step-label">カルテ入力</div>
-                </div>
-                <div class="ai-step" data-step="3">
-                    <div class="ai-step-number">3</div>
-                    <div class="ai-step-label">追加情報</div>
+                    <div class="ai-step-label">カルテ入力・報告書生成</div>
                 </div>
             </div>
 
@@ -160,28 +156,6 @@
                 </div>
             </div>
 
-            <!-- ステップ3: 追加情報 -->
-            <div class="ai-step-content" id="step3">
-                <h3>AI抽出情報の確認・編集</h3>
-                <div class="additional-info">
-                    <div class="form-group">
-                        <label class="form-label">介護度</label>
-                        <input type="text" class="form-input" id="careLevel" placeholder="例: 要介護3">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">主病名</label>
-                        <input type="text" class="form-input" id="primaryDisease" placeholder="例: 高血圧症、糖尿病">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">診察日</label>
-                        <input type="date" class="form-input" id="examDate">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">次回診察日</label>
-                        <input type="date" class="form-input" id="nextExamDate">
-                    </div>
-                </div>
-            </div>
 
             <!-- ナビゲーションボタン -->
             <div class="ai-modal-footer">
@@ -190,10 +164,6 @@
                 </button>
                 <button class="btn-nav btn-nav--primary" id="nextBtn" disabled>
                     <span class="btn-nav__text">次へ →</span>
-                </button>
-                <button class="btn-nav btn-nav--success" id="generateBtn" style="display: none;">
-                    <span class="btn-nav__icon">🤖</span>
-                    <span class="btn-nav__text">報告書を生成する</span>
                 </button>
             </div>
         </section>

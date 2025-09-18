@@ -23,7 +23,6 @@ class AIReportPage {
         // ステップ間ナビゲーション
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
-        const generateBtn = document.getElementById('generateBtn');
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.goToPreviousStep());
@@ -31,10 +30,6 @@ class AIReportPage {
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.goToNextStep());
-        }
-
-        if (generateBtn) {
-            generateBtn.addEventListener('click', () => this.generateReport());
         }
 
         // AI生成ボタン（ステップ2内）
@@ -209,7 +204,7 @@ class AIReportPage {
      * 次のステップへ
      */
     goToNextStep() {
-        if (this.currentStep < 3) {
+        if (this.currentStep < 2) {
             this.currentStep++;
             this.updateStepDisplay();
         }
@@ -240,7 +235,6 @@ class AIReportPage {
         // ボタンの表示/非表示
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
-        const generateBtn = document.getElementById('generateBtn');
 
         if (prevBtn) {
             prevBtn.style.display = this.currentStep > 1 ? 'block' : 'none';
@@ -254,10 +248,6 @@ class AIReportPage {
                 this.populateStep2Data();
                 this.validateStep2();
             }
-        }
-
-        if (generateBtn) {
-            generateBtn.style.display = this.currentStep === 3 ? 'block' : 'none';
         }
     }
 
@@ -340,6 +330,64 @@ class AIReportPage {
         // フォームからすべてのデータを収集
         const reportData = this.collectFormData();
 
+        // 最初に新しいタブを開く（同期的に実行してポップアップブロッカーを回避）
+        const reportWindow = window.open('about:blank', '_blank');
+        if (!reportWindow) {
+            this.showToast('ポップアップがブロックされています。ポップアップを許可してください。', 'error');
+            return;
+        }
+
+        // ローディング画面を表示
+        reportWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="ja">
+            <head>
+                <meta charset="UTF-8">
+                <title>報告書生成中...</title>
+                <style>
+                    body {
+                        font-family: 'Yu Gothic', 'YuGothic', sans-serif;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        margin: 0;
+                        background: #f5f5f5;
+                    }
+                    .loading {
+                        text-align: center;
+                    }
+                    .loading h1 {
+                        color: #333;
+                        font-size: 24px;
+                        margin-bottom: 20px;
+                    }
+                    .spinner {
+                        border: 3px solid #f3f3f3;
+                        border-top: 3px solid #3498db;
+                        border-radius: 50%;
+                        width: 40px;
+                        height: 40px;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="loading">
+                    <h1>報告書を生成中...</h1>
+                    <div class="spinner"></div>
+                    <p>しばらくお待ちください</p>
+                </div>
+            </body>
+            </html>
+        `);
+        reportWindow.document.close();
+
         const generatingIndicator = document.getElementById('generatingIndicator');
         const aiGenerateBtn = document.getElementById('aiGenerateBtn');
 
@@ -355,14 +403,24 @@ class AIReportPage {
             const aiData = await this.callAIAPI(reportData);
 
             if (aiData) {
-                // ステップ3に移動してAI抽出結果を表示
-                this.currentStep = 3;
-                this.updateStepDisplay();
+                // AI生成結果を保持（structuredCloneで確実にコピー）
+                this.aiGeneratedData = typeof structuredClone !== 'undefined' ?
+                    structuredClone(aiData) :
+                    JSON.parse(JSON.stringify(aiData));
+
+                // 直接報告書を生成（ウィンドウ参照を渡す）
+                await this.generateReport(reportWindow);
+            } else {
+                // AIデータがない場合はウィンドウを閉じる
+                reportWindow.close();
+                this.showToast('AI生成に失敗しました', 'error');
             }
 
         } catch (error) {
             console.error('AI生成エラー:', error);
-            this.showToast('AI抽出に失敗しました', 'error');
+            // エラー時はウィンドウを閉じる
+            reportWindow.close();
+            this.showToast('AI生成に失敗しました', 'error');
         } finally {
             if (generatingIndicator) {
                 generatingIndicator.style.display = 'none';
@@ -375,10 +433,12 @@ class AIReportPage {
 
     /**
      * 報告書の生成（最終処理）
+     * @param {Window} reportWindow - 既に開いているウィンドウの参照（オプション）
      */
-    async generateReport() {
+    async generateReport(reportWindow = null) {
         if (!this.selectedPatient) {
             this.showToast('患者を選択してください', 'error');
+            if (reportWindow) reportWindow.close();
             return;
         }
 
@@ -395,6 +455,7 @@ class AIReportPage {
         } catch (error) {
             console.error('LocalStorage保存エラー:', error);
             this.showToast('データの保存に失敗しました', 'error');
+            if (reportWindow) reportWindow.close();
             return;
         }
 
@@ -403,7 +464,14 @@ class AIReportPage {
         // 生成された報告書を新しいタブで開く（LocalStorageのみ使用、URLパラメータなし）
         const reportUrl = `${window.location.protocol}//${window.location.host}/templates/kyotaku_report_template.html`;
         console.log('[ai_report_page.js] 報告書URLを開きます（patientIdパラメータなし）:', reportUrl);
-        window.open(reportUrl, '_blank');
+
+        if (reportWindow) {
+            // 既存のウィンドウにナビゲート
+            reportWindow.location.href = reportUrl;
+        } else {
+            // フォールバック：新しいウィンドウを開く
+            window.open(reportUrl, '_blank');
+        }
     }
 
     /**
@@ -412,26 +480,34 @@ class AIReportPage {
     collectFinalReportData() {
         const data = this.collectFormData();
 
-        // AI生成した診療内容と生活指導を追加
-        if (this.aiGeneratedMedicalContent) {
-            data.medicalContent = this.aiGeneratedMedicalContent;
-        }
-        if (this.aiGeneratedAdviceText) {
-            data.adviceText = this.aiGeneratedAdviceText;
-        }
+        // AI生成データがある場合はそれを使用
+        if (this.aiGeneratedData) {
+            // AI生成した診療内容と生活指導を追加
+            if (this.aiGeneratedData.medical_content) {
+                data.medicalContent = this.aiGeneratedData.medical_content;
+            }
+            if (this.aiGeneratedData.advice_text) {
+                data.adviceText = this.aiGeneratedData.advice_text;
+            }
 
-        // AI選択したアドバイスカテゴリーを配列として追加
-        if (this.aiSelectedAdvice) {
-            // 単一のアドバイスを配列に変換
-            data.advices = [this.aiSelectedAdvice];
-            console.log('報告書に含めるアドバイス:', data.advices);
-        }
+            // AI選択したアドバイスカテゴリーを配列として追加
+            if (this.aiGeneratedData.selected_advice) {
+                data.advices = [this.aiGeneratedData.selected_advice];
+                console.log('報告書に含めるアドバイス:', data.advices);
+            }
 
-        // ステップ3のフィールド値を追加
-        data.careLevel = document.getElementById('careLevel')?.value || '';
-        data.primaryDisease = document.getElementById('primaryDisease')?.value || '';
-        data.examDate = document.getElementById('examDate')?.value || '';
-        data.nextExamDate = document.getElementById('nextExamDate')?.value || '';
+            // AI抽出した情報を追加
+            data.careLevel = this.aiGeneratedData.care_level || '';
+            data.primaryDisease = this.aiGeneratedData.primary_disease || '';
+            data.examDate = this.aiGeneratedData.exam_date || '';
+            data.nextExamDate = this.aiGeneratedData.next_exam_date || '';
+        } else {
+            // AI生成データがない場合はデフォルト値
+            data.careLevel = '';
+            data.primaryDisease = '';
+            data.examDate = '';
+            data.nextExamDate = '';
+        }
 
         // 報告書の期間情報を計算（今月の月初・月末）
         const today = new Date();
@@ -444,16 +520,22 @@ class AIReportPage {
         // 診察日のフォーマット（もし空の場合は今日の日付）
         if (!data.examDate) {
             data.examDate = `${year}年${month}月${today.getDate()}日`;
-        } else {
-            // YYYY-MM-DD形式をYYYY年MM月DD日形式に変換
-            const examDate = new Date(data.examDate);
-            data.examDate = `${examDate.getFullYear()}年${examDate.getMonth() + 1}月${examDate.getDate()}日`;
+        } else if (!data.examDate.includes('年')) {
+            // YYYY/MM/DDまたはYYYY-MM-DD形式をYYYY年MM月DD日形式に変換
+            const examDateStr = data.examDate.replace(/\//g, '-');
+            const examDate = new Date(examDateStr);
+            if (!isNaN(examDate.getTime())) {
+                data.examDate = `${examDate.getFullYear()}年${examDate.getMonth() + 1}月${examDate.getDate()}日`;
+            }
         }
 
         // 次回診察日のフォーマット
-        if (data.nextExamDate) {
-            const nextDate = new Date(data.nextExamDate);
-            data.nextExamDate = `${nextDate.getFullYear()}年${nextDate.getMonth() + 1}月${nextDate.getDate()}日`;
+        if (data.nextExamDate && !data.nextExamDate.includes('年')) {
+            const nextDateStr = data.nextExamDate.replace(/\//g, '-');
+            const nextDate = new Date(nextDateStr);
+            if (!isNaN(nextDate.getTime())) {
+                data.nextExamDate = `${nextDate.getFullYear()}年${nextDate.getMonth() + 1}月${nextDate.getDate()}日`;
+            }
         }
 
         return data;
@@ -480,12 +562,6 @@ class AIReportPage {
             // カルテ内容（ここから診療情報を自動抽出）
             karteContent: document.getElementById('karteContent')?.value || ''
         };
-
-        // デバッグ: officeAddressの値を確認
-        console.log('収集したofficeAddress:', data.officeAddress);
-        console.log('全収集データ:', data);
-
-        return data;
     }
 
     /**
@@ -513,9 +589,14 @@ class AIReportPage {
             const result = await response.json();
 
             if (result.success && result.data) {
-                // AI生成結果をフォームに自動入力
-                this.fillFormWithAIData(result.data);
-                return result.data;
+                // structuredCloneでディープコピーを作成（参照による変更を防ぐ）
+                const clonedData = typeof structuredClone !== 'undefined' ?
+                    structuredClone(result.data) :
+                    JSON.parse(JSON.stringify(result.data));
+
+                // AI生成結果を保持
+                this.fillFormWithAIData(clonedData);
+                return clonedData;
             } else {
                 throw new Error(result.error || 'AI生成に失敗しました');
             }
@@ -528,66 +609,15 @@ class AIReportPage {
     }
 
     /**
-     * AI生成データをフォームに入力
+     * AI生成データを保持（フォーム入力は行わない）
      */
     fillFormWithAIData(aiData) {
-        // 介護度の設定
-        if (aiData.care_level) {
-            const careLevelField = document.getElementById('careLevel');
-            if (careLevelField) {
-                careLevelField.value = aiData.care_level;
-                this.highlightField(careLevelField);
-            }
-        }
+        // AI生成データをクラスのプロパティとして保持
+        this.aiGeneratedData = aiData;
 
-        // 主病名の設定
-        if (aiData.primary_disease) {
-            const diseaseField = document.getElementById('primaryDisease');
-            if (diseaseField) {
-                diseaseField.value = aiData.primary_disease;
-                this.highlightField(diseaseField);
-            }
-        }
-
-        // 診察日の設定
-        if (aiData.exam_date) {
-            const examDateField = document.getElementById('examDate');
-            if (examDateField) {
-                // 日付形式を変換（YYYY/MM/DD → YYYY-MM-DD）
-                const formattedDate = aiData.exam_date.replace(/\//g, '-');
-                examDateField.value = formattedDate;
-                this.highlightField(examDateField);
-            }
-        }
-
-        // 次回診察日の設定
-        if (aiData.next_exam_date) {
-            const nextExamField = document.getElementById('nextExamDate');
-            if (nextExamField) {
-                const formattedDate = aiData.next_exam_date.replace(/\//g, '-');
-                nextExamField.value = formattedDate;
-                this.highlightField(nextExamField);
-            }
-        }
-
-        // 診療内容の設定（別フィールドに保存）
-        if (aiData.medical_content) {
-            // 診療内容を保存（レポート生成時に使用）
-            this.aiGeneratedMedicalContent = aiData.medical_content;
-        }
-
-        // 生活指導の設定（別フィールドに保存）
-        if (aiData.advice_text) {
-            this.aiGeneratedAdviceText = aiData.advice_text;
-        }
-
-        // 選択されたアドバイスカテゴリーを保存
-        if (aiData.selected_advice) {
-            this.aiSelectedAdvice = aiData.selected_advice;
-            console.log('AI選択したアドバイス:', this.aiSelectedAdvice);
-        }
-
-        this.showToast('AI抽出が完了しました。内容を確認してください', 'success');
+        // デバッグ情報
+        console.log('AI生成データを保持しました:', aiData);
+        this.showToast('AI抽出が完了し、報告書を生成しています...', 'success');
     }
 
     /**
