@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>居宅療養管理指導報告書</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😎</text></svg>">
+    <style>
+        @page {
+            size: A4;
+            margin: 9mm 12mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+            font-size: 12pt;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+
+        .container {
+            width: 210mm;
+            min-height: 250mm;
+            max-height: 277mm;
+            margin: 0 auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ヘッダー部分 */
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #333;
+        }
+
+        .title {
+            font-size: 20pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .period {
+            font-size: 12pt;
+            color: #666;
+        }
+
+        /* 送り元・送り先セクション */
+        .correspondence-section {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .sender-info, .recipient-info {
+            width: 48%;
+        }
+
+        .sender-info {
+            border-right: 1px solid #dee2e6;
+            padding-right: 15px;
+        }
+
+        .recipient-info {
+            padding-left: 15px;
+        }
+
+        .section-label {
+            font-size: 11pt;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .clinic-name {
+            font-weight: bold;
+            font-size: 13pt;
+            margin-bottom: 5px;
+        }
+
+        .clinic-address {
+            font-size: 11pt;
+            color: #495057;
+            line-height: 1.4;
+        }
+
+        .recipient-name {
+            font-size: 13pt;
+            font-weight: bold;
+        }
+
+        .office-name {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #333;
+        }
+
+        .office-address {
+            font-size: 11pt;
+            color: #495057;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        /* 患者情報セクション */
+        .patient-section {
+            margin: 8px 0;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+
+        .patient-name-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #e8f4fd;
+            border-left: 4px solid #007bff;
+            border-radius: 3px;
+        }
+
+        .patient-name {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .patient-name-suffix {
+            font-size: 14pt;
+            font-weight: normal;
+            margin-left: 8px;
+            color: #333;
+        }
+
+        .patient-info-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 15px;
+            align-items: baseline;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+            font-size: 12pt;
+            text-align: right;
+        }
+
+        .info-value {
+            font-size: 12pt;
+            color: #333;
+            padding-left: 10px;
+        }
+
+        /* 診察情報グリッド */
+        .medical-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            font-size: 12pt;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+            margin-right: 10px;
+            min-width: 90px;
+        }
+
+        .info-value {
+            flex: 1;
+            padding: 5px 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+
+        /* 主要情報セクション */
+        .main-info-section {
+            margin: 8px 0;
+        }
+
+        .main-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-left: 3px solid #007bff;
+            border-radius: 3px;
+        }
+
+        .main-info-cell {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .main-info-label {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 10px;
+            font-size: 12pt;
+        }
+
+        .main-info-cell > span:last-child {
+            font-size: 12pt;
+            flex: 1;
+        }
+
+        /* 指導内容セクション - 可変高さ */
+        .guidance-section {
+            flex-grow: 1;
+            margin: 10px 0;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guidance-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .subsection {
+            margin: 8px 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .subsection-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 3px solid #28a745;
+        }
+
+        .content-area {
+            padding: 8px 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            min-height: 115px;
+            height: 115px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            font-size: 12pt;
+        }
+
+        /* 生活指導リスト */
+        .advice-list {
+            margin: 10px 0;
+            padding-left: 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .advice-item {
+            margin: 3px 0;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            display: flex;
+            align-items: flex-start;
+            font-size: 12pt;
+        }
+
+        .advice-checkbox {
+            margin-right: 10px;
+            margin-top: 3px;
+            accent-color: #28a745;
+            width: 18px;
+            height: 18px;
+            cursor: default;
+        }
+
+        .advice-checkbox:checked {
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        }
+
+        .advice-item[style*="display: flex"] {
+            background: #f0fff4;
+            border-color: #28a745;
+        }
+
+        .advice-type {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        .advice-content {
+            flex: 1;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        /* フッター - 最下部固定 */
+        .footer {
+            margin-top: auto;
+            padding: 8px 0 5px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 10pt;
+            color: #6c757d;
+        }
+
+        /* A4 印刷用スタイル */
+        @media print {
+            @page {
+                size: A4;
+                margin: 8mm 10mm;
+            }
+
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                line-height: 1.4;
+            }
+
+            .container {
+                padding: 0;
+                width: 100%;
+                height: auto;
+                max-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .correspondence-section,
+            .patient-section,
+            .guidance-section {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+
+            .content-area {
+                max-height: none;
+                overflow-y: visible;
+            }
+
+            .footer {
+                margin-top: auto;
+                width: 100%;
+            }
+
+            /* 改ページ防止 */
+            .header,
+            .correspondence-section,
+            .patient-section,
+            .medical-info-grid,
+            .main-info-section,
+            .guidance-section {
+                page-break-inside: avoid;
+            }
+
+            /* 不要な要素を非表示 */
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* レスポンシブ対応 */
+        @media screen and (max-width: 768px) {
+            .correspondence-section {
+                flex-direction: column;
+            }
+
+            .sender-info, .recipient-info {
+                width: 100%;
+                border: none;
+                padding: 10px 0;
+            }
+
+            .medical-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1 class="title">居宅療養管理指導報告書</h1>
+            <div class="period" data-field="period">対象期間：{{period_start}} ～ {{period_end}}</div>
+        </header>
+
+        <!-- 送り元・送り先情報 -->
+        <section class="correspondence-section">
+            <div class="sender-info">
+                <div class="section-label"></div>
+                <div class="clinic-name">たすくホームクリニック</div>
+                <div class="clinic-address">
+                    〒242-0003<br>
+                    神奈川県大和市林間1-5-7-201<br>
+                    TEL 046-206-7131 / FAX 046-206-7132
+                </div>
+            </div>
+            <div class="recipient-info">
+                <div class="section-label"></div>
+                <div class="recipient-name">ご担当　<span data-field="cm_name">{{cm_name}}</span>　様</div>
+                <div class="office-name" data-field="homecare_office_name">{{homecare_office_name}}</div>
+                <div class="office-address" data-field="homecare_office_address">{{homecare_office_address}}</div>
+            </div>
+        </section>
+
+        <!-- 患者情報 -->
+        <section class="patient-section">
+            <div class="patient-name-row">
+                <span class="patient-name" data-field="patient_name">{{patient_name}}</span>
+                <span class="patient-name-suffix">様</span>
+            </div>
+
+            <div class="patient-info-grid">
+                <div class="info-row">
+                    <span class="info-label">生年月日：</span>
+                    <span class="info-value" data-field="birthdate">{{birthdate}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">年齢：</span>
+                    <span class="info-value"><span data-field="age">{{age}}</span>歳</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ご住所：</span>
+                    <span class="info-value" data-field="address">{{address}}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 診察情報 -->
+        <section class="medical-info-grid">
+            <div class="info-item">
+                <span class="info-label">診察日：</span>
+                <span class="info-value" data-field="exam_date">{{exam_date}}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">次回診察日：</span>
+                <span class="info-value" data-field="next_exam_date">{{next_exam_date}}</span>
+            </div>
+        </section>
+
+        <!-- 主要情報 -->
+        <section class="main-info-section">
+            <div class="main-info-grid">
+                <div class="main-info-cell">
+                    <span class="main-info-label">介護度：</span>
+                    <span data-field="care_level">{{care_level}}</span>
+                </div>
+                <div class="main-info-cell">
+                    <span class="main-info-label">主病名：</span>
+                    <span data-field="primary_disease">{{primary_disease}}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 居宅療養管理指導内容・治療経過 -->
+        <section class="guidance-section">
+            <h2 class="guidance-title">居宅療養管理指導内容・治療経過</h2>
+
+            <div class="subsection">
+                <h3 class="subsection-title">診療内容</h3>
+                <div class="content-area" data-field="medical_content">{{medical_content}}</div>
+            </div>
+
+            <div class="subsection">
+                <h3 class="subsection-title">居宅療養アドバイス・日常生活の注意点</h3>
+                <div class="advice-list">
+                    <div class="advice-item" data-advice="hypertension" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">高血圧生活指導：</span>
+                        <span class="advice-content">減塩食や適度な運動を心がけましょう。</span>
+                    </div>
+                    <div class="advice-item" data-advice="diabetes" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">糖尿病生活指導：</span>
+                        <span class="advice-content">間食を控えるように。服薬中の方は低血糖症状にも要注意。</span>
+                    </div>
+                    <div class="advice-item" data-advice="kidney" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">腎臓病生活指導：</span>
+                        <span class="advice-content">血圧コントロール、たんぱく質制限、カリウムの多い食べ物を控えるように。</span>
+                    </div>
+                    <div class="advice-item" data-advice="lipid" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">脂質代謝異常症：</span>
+                        <span class="advice-content">食事バランスを良くし、運動をするように。</span>
+                    </div>
+                    <div class="advice-item" data-advice="dementia" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">物忘れ指導：</span>
+                        <span class="advice-content">服薬の見守りなど細かい介護にて対応。気分の変化などに留意しましょう。</span>
+                    </div>
+                    <div class="advice-item" data-advice="fall_prevention" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">転倒予防指導：</span>
+                        <span class="advice-content">日常生活の中で歩行訓練をし、転倒に十分注意しましょう。</span>
+                    </div>
+                    <div class="advice-item" data-advice="bedridden" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">寝たきり指導：</span>
+                        <span class="advice-content">拘縮予防、褥瘡防止、長時間同じ姿勢を取らないように。</span>
+                    </div>
+                    <div class="advice-item" data-advice="malnutrition" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">低栄養指導：</span>
+                        <span class="advice-content">低栄養に対して、栄養剤の補食を指導。</span>
+                    </div>
+                    <div class="advice-item" data-advice="aspiration" style="display: none;">
+                        <input type="checkbox" class="advice-checkbox" checked readonly>
+                        <span class="advice-type">誤嚥防止指導：</span>
+                        <span class="advice-content">嚥下能力にあった食事形状を工夫し、食事はゆっくり摂りましょう。</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="footer">
+            <div class="generated-info">
+            </div>
+        </footer>
+    </div>
+
+    <!-- レポート生成JavaScript -->
+    <script src="../js/report_generator.js"></script>
+
+    <script>
+        // テンプレートデータバインディング用のJavaScript
+        window.KyotakuReportTemplate = {
+            // データをテンプレートに適用する関数
+            applyData: function(data) {
+                console.log('[KyotakuReportTemplate.applyData] 報告書データを適用中:', data);
+                console.log('[KyotakuReportTemplate.applyData] 処理を開始します');
+                console.log('[KyotakuReportTemplate.applyData] officeAddress値:', data.officeAddress);
+                console.log('[KyotakuReportTemplate.applyData] primaryDisease値:', data.primaryDisease);
+                console.log('[KyotakuReportTemplate.applyData] nextExamDate値:', data.nextExamDate);
+
+                // プレースホルダーの置換（特殊フィールドをスキップ）
+                document.querySelectorAll('[data-field]').forEach(element => {
+                    const field = element.getAttribute('data-field');
+                    // periodフィールドは後で特別処理するのでスキップ
+                    if (field === 'period') {
+                        return;
+                    }
+
+                    let value = data[field];
+                    // birthdateの日付フォーマット変換（YYYY-MM-DD → YYYY年MM月DD日）
+                    if (field === 'birthdate' && value) {
+                        const dateMatch = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+                        if (dateMatch) {
+                            value = `${dateMatch[1]}年${parseInt(dateMatch[2])}月${parseInt(dateMatch[3])}日`;
+                        }
+                    }
+
+                    if (value !== undefined && value !== null) {
+                        if (element.textContent) {
+                            // 複数のプレースホルダーがある場合は、最初のものだけを置換
+                            element.textContent = element.textContent.replace(/\{\{[^}]*?\}\}/, value);
+                        }
+                    }
+                });
+
+                // 診療内容の改行処理と表示
+                if (data.medicalContent) {
+                    const medicalContentElement = document.querySelector('[data-field="medical_content"]');
+                    if (medicalContentElement) {
+                        // 改行文字を<br>に変換して表示
+                        medicalContentElement.innerHTML = data.medicalContent.replace(/\n/g, '<br>');
+                    }
+                }
+
+                // 生活指導文の表示
+                if (data.adviceText) {
+                    const adviceTextElement = document.querySelector('[data-field="advice_text"]');
+                    if (adviceTextElement) {
+                        adviceTextElement.textContent = data.adviceText;
+                    }
+                }
+
+                // 生活指導項目の表示制御（該当する項目のチェックボックスを表示）
+                if (data.advices && Array.isArray(data.advices) && data.advices.length > 0) {
+                    data.advices.forEach(adviceType => {
+                        const adviceElement = document.querySelector(`[data-advice="${adviceType}"]`);
+                        if (adviceElement) {
+                            adviceElement.style.display = 'flex';
+                        }
+                    });
+                } else {
+                    // advicesが空または未定義の場合、主病名から推測するか、デフォルトのアドバイスを表示
+                    console.log('[KyotakuReportTemplate.applyData] advices配列が空です。デフォルトのアドバイスを表示します');
+
+                    // 主病名に基づいてアドバイスを決定
+                    const primaryDisease = data.primaryDisease || '';
+                    let defaultAdvices = [];
+
+                    if (primaryDisease.includes('認知症') || primaryDisease.includes('アルツハイマー')) {
+                        defaultAdvices.push('dementia');
+                    }
+                    if (primaryDisease.includes('高血圧')) {
+                        defaultAdvices.push('hypertension');
+                    }
+                    if (primaryDisease.includes('糖尿病')) {
+                        defaultAdvices.push('diabetes');
+                    }
+
+                    // 何も該当しない場合は転倒予防を表示
+                    if (defaultAdvices.length === 0) {
+                        defaultAdvices.push('fall_prevention');
+                    }
+
+                    // デフォルトアドバイスを表示
+                    defaultAdvices.forEach(adviceType => {
+                        const adviceElement = document.querySelector(`[data-advice="${adviceType}"]`);
+                        if (adviceElement) {
+                            adviceElement.style.display = 'flex';
+                        }
+                    });
+                }
+
+                // フィールドマッピング（AI報告書のデータキーと表示フィールドの対応）
+                const fieldMapping = {
+                    'patientName': 'patient_name',
+                    'cmName': 'cm_name',
+                    'officeName': 'homecare_office_name',
+                    'officeAddress': 'homecare_office_address',
+                    'periodStart': 'period',
+                    'periodEnd': 'period',
+                    'careLevel': 'care_level',
+                    'primaryDisease': 'primary_disease',
+                    'examDate': 'exam_date',
+                    'nextExamDate': 'next_exam_date',
+                    'doctorName': 'doctor_name'
+                };
+
+                // マッピングに基づいてデータを適用
+                Object.keys(fieldMapping).forEach(sourceKey => {
+                    // undefinedでない限り処理（空文字列も含む）
+                    if (data[sourceKey] !== undefined) {
+                        const targetField = fieldMapping[sourceKey];
+                        const elements = document.querySelectorAll(`[data-field="${targetField}"]`);
+                        elements.forEach(element => {
+                            // デバッグログ追加
+                            console.log(`Setting ${targetField}: "${data[sourceKey]}"`);
+                            if (element.textContent.includes('{{')) {
+                                element.textContent = element.textContent.replace(/\{\{.*?\}\}/g, data[sourceKey] || '');
+                            } else {
+                                element.textContent = data[sourceKey] || '';
+                            }
+                        });
+                    }
+                });
+
+                // 期間情報の特別処理
+                if (data.periodStart && data.periodEnd) {
+                    console.log('[KyotakuReportTemplate.applyData] 期間を設定:', data.periodStart, '～', data.periodEnd);
+                    const periodElement = document.querySelector('[data-field="period"]');
+                    if (periodElement) {
+                        periodElement.textContent = `対象期間: ${data.periodStart} ～ ${data.periodEnd}`;
+                    }
+                }
+            },
+
+            // LocalStorageからデータを読み込む
+            loadFromLocalStorage: function() {
+                try {
+                    const storedData = localStorage.getItem('kyotakuReportData');
+                    if (storedData) {
+                        const data = JSON.parse(storedData);
+                        console.log('LocalStorageから報告書データを読み込みました:', data);
+                        return data;
+                    }
+                } catch (error) {
+                    console.error('LocalStorageからのデータ読み込みエラー:', error);
+                }
+                return null;
+            },
+
+            // LocalStorageをクリア
+            clearLocalStorage: function() {
+                localStorage.removeItem('kyotakuReportData');
+                console.log('LocalStorageの報告書データをクリアしました');
+            },
+
+            // 印刷用のスタイル適用
+            preparePrint: function() {
+                window.print();
+            },
+
+            // PDFエクスポート用の準備（要ライブラリ）
+            exportPDF: async function(filename = '居宅療養管理指導書.pdf') {
+                // html2pdfやjsPDFなどのライブラリを使用
+                console.log('PDF export functionality requires additional library');
+            },
+
+            // サンプルデータの生成（テスト用）
+            getSampleData: function() {
+                console.error('[KyotakuReportTemplate.getSampleData] ❌ サンプルデータのフォールバックが呼び出されました');
+                console.error('[KyotakuReportTemplate.getSampleData] ❌ これは本番環境で使用されるべきではありません！');
+                return {
+                    period_start: '2024年1月1日',
+                    period_end: '2024年1月31日',
+                    cm_name: '山田太郎',
+                    homecare_office_name: 'ケアプランセンターやまと',
+                    homecare_office_address: '〒242-0001 神奈川県大和市中央1-2-3',
+                    patient_name: '佐藤花子',
+                    birthdate: '1940年5月15日',
+                    age: '83',
+                    address: '神奈川県大和市林間2-3-4',
+                    exam_date: '2024年1月15日',
+                    doctor_name: '田中医師',
+                    next_exam_date: '2024年2月15日',
+                    care_level: '要介護3',
+                    primary_disease: '高血圧症、糖尿病、認知症',
+                    medical_content: '本日の診察では、血圧は130/80mmHgと安定。\n血糖値も良好にコントロールされています。\n認知機能については、軽度の記憶障害が見られますが、日常生活に大きな支障はありません。\n処方薬の継続と生活指導を行いました。',
+                    advices: ['hypertension', 'diabetes', 'dementia', 'fall_prevention'],
+                    generated_date: new Date().toLocaleString('ja-JP')
+                };
+            },
+
+            // 初期化処理
+            init: function() {
+                console.log('[KyotakuReportTemplate.init] 初期化処理開始');
+
+                // LocalStorageからデータを読み込んで適用
+                const reportData = this.loadFromLocalStorage();
+                if (reportData) {
+                    console.log('[KyotakuReportTemplate.init] ✅ LocalStorageからデータを適用します');
+                    console.log('[KyotakuReportTemplate.init] データソース: AI報告書生成画面');
+                    this.applyData(reportData);
+                } else {
+                    console.log('[KyotakuReportTemplate.init] ⚠️ LocalStorageにデータがありません');
+
+                    // URLパラメータのチェック（デバッグ用）
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const patientId = urlParams.get('patientId');
+                    if (patientId) {
+                        console.warn('[KyotakuReportTemplate.init] ⚠️ URLにpatientIdがありますが、LocalStorageが推奨されます');
+                        console.warn('[KyotakuReportTemplate.init] ⚠️ patientId:', patientId);
+                    } else {
+                        console.log('[KyotakuReportTemplate.init] ℹ️ URLパラメータもありません（正常）');
+                    }
+
+                    console.error('[KyotakuReportTemplate.init] ❌ データソースがありません。ai_report.htmlから報告書を生成してください');
+                }
+
+                // 印刷イベントのリスナーを設定
+                window.addEventListener('afterprint', () => {
+                    // 印刷後にLocalStorageをクリア
+                    this.clearLocalStorage();
+                });
+            }
+        };
+
+        // ページ読み込み時に初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[kyotaku_report_template.html] DOMContentLoaded イベント発火');
+            console.log('[kyotaku_report_template.html] report_generator.js の状態:',
+                        window.reportGenerator ? '読み込み済み' : '未読み込み');
+            window.KyotakuReportTemplate.init();
+        });
+    </script>
+</body>
+</html>

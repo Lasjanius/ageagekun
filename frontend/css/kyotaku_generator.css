@@ -1,0 +1,324 @@
+/* 居宅療養管理指導書 AI生成モジュール用スタイル */
+
+/* プレビューモーダル */
+.kyotaku-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kyotaku-preview-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.kyotaku-preview-modal .modal-content {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.kyotaku-preview-modal .modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kyotaku-preview-modal .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.kyotaku-preview-modal .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.kyotaku-preview-modal .close-btn:hover {
+    background: #f0f0f0;
+}
+
+.kyotaku-preview-modal .modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+.kyotaku-preview-modal .modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ボタンスタイル */
+.kyotaku-preview-modal .btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.kyotaku-preview-modal .btn-primary {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.kyotaku-preview-modal .btn-primary:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.kyotaku-preview-modal .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.kyotaku-preview-modal .btn-secondary:hover {
+    background: #545b62;
+    border-color: #545b62;
+}
+
+.kyotaku-preview-modal .btn-cancel {
+    background: white;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.kyotaku-preview-modal .btn-cancel:hover {
+    background: #f8f9fa;
+}
+
+/* ローディングオーバーレイ */
+.kyotaku-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.kyotaku-loading-overlay .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.kyotaku-loading-overlay .loading-text {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #333;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 通知スタイル */
+.kyotaku-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    z-index: 10001;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.kyotaku-notification.show {
+    transform: translateX(0);
+}
+
+.kyotaku-notification.success {
+    background: #28a745;
+}
+
+.kyotaku-notification.error {
+    background: #dc3545;
+}
+
+.kyotaku-notification.warning {
+    background: #ffc107;
+    color: #333;
+}
+
+.kyotaku-notification.info {
+    background: #17a2b8;
+}
+
+/* 生成ボタン */
+.generate-kyotaku-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.generate-kyotaku-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.generate-kyotaku-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.generate-kyotaku-btn::before {
+    content: "🤖";
+    font-size: 16px;
+}
+
+/* 生成フォーム */
+.kyotaku-generate-form {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+.kyotaku-generate-form .form-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+}
+
+.kyotaku-generate-form .form-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.kyotaku-generate-form .form-group {
+    margin-bottom: 15px;
+}
+
+.kyotaku-generate-form label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.kyotaku-generate-form input,
+.kyotaku-generate-form select,
+.kyotaku-generate-form textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.kyotaku-generate-form input:focus,
+.kyotaku-generate-form select:focus,
+.kyotaku-generate-form textarea:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.kyotaku-generate-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* 患者カード内の生成ボタン */
+.patient-card .generate-kyotaku-btn {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+/* ドキュメントリスト内の生成ボタン */
+.document-item .generate-kyotaku-btn {
+    margin-left: auto;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .kyotaku-preview-modal .modal-content {
+        width: 95%;
+        height: 95%;
+        margin: 10px;
+    }
+
+    .kyotaku-preview-modal .modal-footer {
+        flex-direction: column;
+    }
+
+    .kyotaku-preview-modal .btn {
+        width: 100%;
+    }
+
+    .kyotaku-notification {
+        left: 20px;
+        right: 20px;
+        transform: translateY(-100px);
+    }
+
+    .kyotaku-notification.show {
+        transform: translateY(0);
+    }
+}

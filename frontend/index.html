@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アゲアゲくん - 書類自動アップロードシステム</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😎</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/ai_report.css">
+</head>
+<body>
+    <!-- サイドバー -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <h2 class="sidebar__title">メニュー</h2>
+            <button class="sidebar__close" id="sidebarClose">×</button>
+        </div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link sidebar__link--active">
+                <span class="sidebar__icon">📤</span>
+                <span class="sidebar__text">自動アップロード</span>
+            </a>
+            <a href="ai_report.html" class="sidebar__link">
+                <span class="sidebar__icon">🤖</span>
+                <span class="sidebar__text">AI報告書作成</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <button class="hamburger" id="hamburgerBtn">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
+            <h1 class="header__title">🚀 アゲアゲくん</h1>
+            <div class="header__subtitle">モバカルネット書類自動アップロードシステム</div>
+        </header>
+
+        <!-- コンパクト統計バー -->
+        <section class="statistics-bar">
+            <div class="statistics-bar__items">
+                <span class="statistics-bar__item">
+                    <span class="statistics-bar__label">未:</span>
+                    <span class="statistics-bar__value statistics-bar__value--pending" id="pendingCount">0</span>
+                </span>
+                <span class="statistics-bar__item">
+                    <span class="statistics-bar__label">済:</span>
+                    <span class="statistics-bar__value statistics-bar__value--completed" id="completedCount">0</span>
+                </span>
+                <span class="statistics-bar__item">
+                    <span class="statistics-bar__label">計:</span>
+                    <span class="statistics-bar__value" id="totalCount">0</span>
+                </span>
+            </div>
+            <div class="statistics-bar__actions">
+                <button class="btn btn--secondary btn--small" id="refreshBtn">
+                    <span class="btn__icon">🔄</span>
+                    <span class="btn__text">更新</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- タブナビゲーション -->
+        <section class="tabs">
+            <button class="tab tab--active" id="patientTab" data-view="patient">
+                <span class="tab__icon">👥</span>
+                <span class="tab__text">患者別</span>
+            </button>
+            <button class="tab" id="documentTab" data-view="document">
+                <span class="tab__icon">📄</span>
+                <span class="tab__text">書類別</span>
+            </button>
+        </section>
+
+        <!-- アクションバー -->
+        <section class="actions">
+            <input type="text" class="search-input" id="searchInput" placeholder="検索...">
+            <div class="filter-buttons">
+                <button class="filter-btn filter-btn--active" id="filterAll" data-filter="all">全て</button>
+                <button class="filter-btn" id="filterPending" data-filter="pending">未</button>
+                <button class="filter-btn" id="filterUploaded" data-filter="uploaded">済</button>
+            </div>
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="selectAllCheckbox">
+                <span>全て選択</span>
+            </label>
+            <button class="btn btn--primary" id="uploadAllBtn" disabled>
+                <span class="btn__icon">⬆️</span>
+                <span class="btn__text">アップロード</span>
+                <span class="btn__count" id="selectedCount">(0)</span>
+            </button>
+            <button class="btn btn--ai" id="aiGenerateBtn">
+                <span class="btn__icon">🤖</span>
+                <span class="btn__text">AI作成</span>
+            </button>
+        </section>
+
+
+        <!-- コンテンツエリア -->
+        <section class="content-area">
+            <!-- 患者ビュー -->
+            <div class="view-container view-container--active" id="patientView">
+                <div class="file-list" id="patientList">
+                    <div class="loading">
+                        <div class="loading__spinner"></div>
+                        <div class="loading__text">読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 書類ビュー -->
+            <div class="view-container" id="documentView" style="display: none;">
+                <div class="document-list" id="documentList">
+                    <!-- 動的にコンテンツが追加されます -->
+                </div>
+            </div>
+        </section>
+
+        <!-- アップロード進行状況モーダル -->
+        <div class="modal" id="uploadModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h2 class="modal__title">アップロード中</h2>
+                    <button class="modal__close" id="closeModalBtn" style="display: none;">✕</button>
+                </div>
+                <div class="modal__body">
+                    <div class="progress">
+                        <div class="progress__bar" id="progressBar" style="width: 0%"></div>
+                        <div class="progress__text" id="progressText">0 / 0 (0%)</div>
+                    </div>
+                    <div class="queue-table-container">
+                        <table class="queue-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>ファイル名</th>
+                                    <th>患者名</th>
+                                    <th>ステータス</th>
+                                    <th>経過時間</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploadQueue">
+                                <!-- 動的にアップロード状況が表示されます -->
+                            </tbody>
+                        </table>
+                        <div class="queue-complete-message" id="queueCompleteMessage" style="display: none;">
+                            <div class="queue-complete-message__icon">✅</div>
+                            <div class="queue-complete-message__text">すべて完了しました</div>
+                            <div class="queue-complete-message__details" id="queueCompleteDetails"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--secondary" id="cancelUploadBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 確認ダイアログ -->
+        <div class="modal" id="confirmModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content modal__content--small">
+                <div class="modal__header">
+                    <h2 class="modal__title">確認</h2>
+                </div>
+                <div class="modal__body">
+                    <p id="confirmMessage">選択したファイルをアップロードしますか？</p>
+                    <ul class="confirm-list" id="confirmList">
+                        <!-- 選択されたファイル一覧 -->
+                    </ul>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--primary" id="confirmYesBtn">はい</button>
+                    <button class="btn btn--secondary" id="confirmNoBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- トースト通知エリア -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- アップロード完了モーダル -->
+    <div class="modal" id="completionModal" style="display: none;">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--compact">
+            <div class="modal__header">
+                <h2 class="modal__title">✅ アップロードがすべて完了しました</h2>
+            </div>
+            <div class="modal__body">
+                <div id="completionDetails" class="completion-details"></div>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn--primary" id="completionOkBtn">
+                    <span class="btn__text">OK</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/ai_report_generator.js"></script>
+</body>
+</html>

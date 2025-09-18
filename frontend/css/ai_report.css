@@ -1,0 +1,758 @@
+/* AI作成ボタン */
+.btn--ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+}
+
+.btn--ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn--ai:active {
+    transform: translateY(0);
+}
+
+/* AI報告書生成モーダル */
+.ai-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-modal.show {
+    display: flex;
+}
+
+.ai-modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.ai-modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.ai-modal-title {
+    margin: 0;
+    font-size: 24px;
+}
+
+.ai-modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.ai-modal-body {
+    padding: 20px;
+}
+
+/* ステップインジケーター */
+.ai-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.ai-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.ai-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: #e0e0e0;
+    z-index: -1;
+}
+
+.ai-step.active .ai-step-number {
+    background: #667eea;
+    color: white;
+}
+
+.ai-step.completed .ai-step-number {
+    background: #4caf50;
+    color: white;
+}
+
+.ai-step.completed:not(:last-child)::after {
+    background: #4caf50;
+}
+
+.ai-step-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #666;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 3px;
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+}
+
+.ai-step-label {
+    font-size: 11px;
+    color: #666;
+}
+
+/* ステップコンテンツ */
+.ai-step-content {
+    display: none;
+}
+
+.ai-step-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 患者検索 */
+.patient-search-container {
+    margin: 10px 0;
+}
+
+.patient-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.patient-search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.patient-search-input::placeholder {
+    color: #999;
+}
+
+/* 患者選択 */
+.patient-select-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 10px 0;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* スクロールバースタイル */
+.patient-select-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.patient-select-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.patient-select-grid::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.patient-select-grid::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.patient-card {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.patient-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    background: #fafbff;
+    transform: translateX(4px);
+}
+
+.patient-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f3f4ff 0%, #e8eaff 100%);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    position: relative;
+}
+
+.patient-card.selected::after {
+    content: '✓';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.patient-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.patient-id {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.patient-name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.patient-info {
+    display: grid;
+    gap: 6px;
+}
+
+.patient-info-item {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.patient-info-item .label {
+    color: #999;
+    min-width: 100px;
+}
+
+.patient-info-item .value {
+    color: #333;
+    font-weight: 500;
+}
+
+/* カルテ入力 */
+.karte-input-container {
+    margin: 20px 0;
+}
+
+.karte-textarea {
+    width: 100%;
+    min-height: 300px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    resize: vertical;
+}
+
+.karte-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.karte-info {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.karte-info-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.karte-info-text {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 追加情報入力 */
+.additional-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* モーダルフッター */
+.ai-modal-footer {
+    padding: 30px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background: #f8f9fa;
+}
+
+/* ナビゲーションボタン（大きく目立つデザイン） */
+.btn-nav {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-transform: none;
+    letter-spacing: 0.5px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.btn-nav:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-nav--primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-nav--primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b4690 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-nav--secondary {
+    background: #f0f1f5;
+    color: #666;
+}
+
+.btn-nav--secondary:hover:not(:disabled) {
+    background: #e0e1e5;
+    transform: translateY(-1px);
+}
+
+.btn-nav--success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    min-width: 200px;
+}
+
+.btn-nav--success:hover:not(:disabled) {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(72, 187, 120, 0.3);
+}
+
+.btn-nav__text {
+    font-size: 16px;
+}
+
+.btn-nav__icon {
+    font-size: 20px;
+}
+
+/* ローディング状態 */
+.ai-loading {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.ai-loading.show {
+    display: block;
+}
+
+.ai-loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ai-loading-text {
+    font-size: 16px;
+    color: #666;
+}
+
+/* エラー表示 */
+.ai-error {
+    display: none;
+    padding: 15px;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 5px;
+    color: #c00;
+    margin: 20px 0;
+}
+
+.ai-error.show {
+    display: block;
+}
+
+/* 成功メッセージ */
+.ai-success {
+    display: none;
+    padding: 15px;
+    background: #efe;
+    border: 1px solid #cfc;
+    border-radius: 5px;
+    color: #060;
+    margin: 20px 0;
+}
+
+.ai-success.show {
+    display: block;
+}
+
+/* ================== */
+/* ステップ2 改善版スタイル */
+/* ================== */
+
+/* 2カラムコンテナ */
+.two-column-container {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    min-height: 520px;
+}
+
+/* 左カラム */
+.left-column {
+    flex: 0 0 40%;
+    max-width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* 右カラム */
+.right-column {
+    flex: 0 0 calc(60% - 24px);
+    max-width: calc(60% - 24px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* スクロールバースタイル */
+.right-column::-webkit-scrollbar {
+    width: 6px;
+}
+
+.right-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.right-column::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 3px;
+}
+
+.right-column::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* カルテセクション専用スタイル */
+.karte-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.karte-section .karte-textarea-large {
+    min-height: 320px;
+    flex: 1;
+}
+
+/* 情報セクション */
+.info-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+}
+
+.left-column .info-section:not(:last-child) {
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #667eea;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* グリッドレイアウト */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.info-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-field label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+}
+
+.info-field input {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.info-field input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.info-field input.readonly-field {
+    background: #f0f0f0;
+    cursor: not-allowed;
+    color: #666;
+}
+
+/* 大きなテキストエリア */
+.karte-textarea-large {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.6;
+    resize: none;
+    transition: all 0.2s ease;
+}
+
+.karte-textarea-large:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* AI生成セクション */
+.ai-generate-section {
+    display: flex;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    flex-shrink: 0;
+}
+
+/* AI生成ボタン */
+.btn-ai-generate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    min-width: 280px;
+    justify-content: center;
+}
+
+.btn-ai-generate:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b4690 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ai-generate:active {
+    transform: translateY(0);
+}
+
+.btn-ai-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-ai-icon {
+    font-size: 20px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+    .two-column-container {
+        gap: 16px;
+    }
+
+    .left-column {
+        flex: 0 0 45%;
+        max-width: 45%;
+    }
+
+    .right-column {
+        flex: 0 0 calc(55% - 16px);
+        max-width: calc(55% - 16px);
+    }
+}
+
+@media (max-width: 768px) {
+    /* 1カラムレイアウトに変更 */
+    .two-column-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .left-column,
+    .right-column {
+        flex: 1 1 100%;
+        max-width: 100%;
+        position: static;
+        max-height: none;
+    }
+
+    .karte-section .karte-textarea-large {
+        min-height: 250px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-ai-generate {
+        width: 100%;
+    }
+
+    /* モバイルで右カラムのsticky位置を解除 */
+    .right-column {
+        position: static !important;
+    }
+}

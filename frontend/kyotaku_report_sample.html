@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>居宅療養管理指導書 - サンプルプレビュー</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😎</text></svg>">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #e9ecef;
+            font-family: sans-serif;
+        }
+
+        .preview-controls {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .preview-controls h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .preview-controls button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-print {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #0056b3;
+        }
+
+        .btn-reload {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reload:hover {
+            background: #218838;
+        }
+
+        .preview-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            min-height: 297mm;
+        }
+
+        iframe {
+            width: 100%;
+            height: 297mm;
+            border: none;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .preview-controls {
+                display: none;
+            }
+
+            .preview-container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-controls">
+        <h1>🏠 居宅療養管理指導書 - A4サンプルプレビュー</h1>
+        <button class="btn-print" onclick="printReport()">🖨️ 印刷プレビュー</button>
+        <button class="btn-reload" onclick="loadSampleData()">🔄 サンプルデータ再生成</button>
+        <p style="margin-top: 10px; color: #666; font-size: 12px;">
+            ※ 文字サイズ最低12pt、A4用紙1枚に最適化
+        </p>
+    </div>
+
+    <div class="preview-container">
+        <iframe id="reportFrame" src="templates/kyotaku_report_template.html"></iframe>
+    </div>
+
+    <script>
+        // サンプルデータの生成と適用
+        function loadSampleData() {
+            const frame = document.getElementById('reportFrame');
+            const frameDoc = frame.contentDocument || frame.contentWindow.document;
+
+            // サンプルデータ
+            const sampleData = {
+                period_start: '2024年1月1日',
+                period_end: '2024年1月31日',
+                cm_name: '山田太郎',
+                patient_name: '佐藤花子',
+                birthdate: '昭和15年5月15日',
+                age: '83',
+                address: '神奈川県大和市林間2-3-4 メゾン大和201号',
+                exam_date: '2024年1月15日',
+                doctor_name: '田中一郎医師',
+                next_exam_date: '2024年2月15日',
+                care_level: '要介護3',
+                primary_disease: '高血圧症、2型糖尿病、軽度認知症、変形性膝関節症',
+                medical_content: '血圧130/80mmHg、HbA1c 7.2%で概ね良好。\n認知機能は変化なし。膝痛あり、鎮痛薬継続。',
+                generated_date: new Date().toLocaleString('ja-JP')
+            };
+
+            // 表示する生活指導項目（最も関連深い1個のみ）
+            const activeAdvices = ['diabetes'];  // 糖尿病が主病名に含まれる場合の例
+
+            // データを適用
+            frameDoc.querySelectorAll('[data-field]').forEach(element => {
+                const field = element.getAttribute('data-field');
+                if (sampleData[field]) {
+                    element.textContent = sampleData[field];
+                }
+            });
+
+            // 生活指導項目の表示
+            frameDoc.querySelectorAll('[data-advice]').forEach(element => {
+                const adviceType = element.getAttribute('data-advice');
+                if (activeAdvices.includes(adviceType)) {
+                    element.style.display = 'flex';
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+        }
+
+        // 印刷機能
+        function printReport() {
+            const frame = document.getElementById('reportFrame');
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+        }
+
+        // ページ読み込み時にサンプルデータを適用
+        window.onload = function() {
+            setTimeout(loadSampleData, 500);
+        };
+    </script>
+</body>
+</html>

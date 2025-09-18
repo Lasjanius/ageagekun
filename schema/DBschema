@@ -1,0 +1,32 @@
+- patients
+    - patientID(key)
+    - patientName
+    - address
+    - visitingNurse
+    - homecareOffice
+    - CMName
+    - birthdate
+    - created_at
+
+- Documents
+    - fileID(key)
+    - fileName
+    - patientID
+    - Category
+    - FileType
+    - created_at
+    - uploaded_at
+    - isUploaded
+    - pass
+
+- rpa_queue
+    - id(key)
+    - task_type
+    - file_id(FK to Documents)
+    - payload(JSON)
+    - status(pending/processing/done/failed)
+    - created_at
+    - started_at
+    - finished_at
+    - error_message
+    - retry_count

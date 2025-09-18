@@ -1,0 +1,305 @@
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
+const db = require('../config/database');
+const { Client } = require('pg');
+
+class UploadProcessor {
+  constructor() {
+    this.pgClient = null;
+    this.padPath = 'C:\\Program Files (x86)\\Power Automate Desktop\\dotnet\\PAD.Console.Host.exe';
+    this.flowName = 'ageagekun_kyotaku';
+    this.baseDir = 'C:\\Users\\hyosh\\Desktop\\allright\\ageagekun\\patients';
+  }
+
+  // プロセッサーを開始（イベント駆動型）
+  async start() {
+    console.log('🚀 Starting event-driven upload processor...');
+    
+    // PostgreSQL LISTEN設定
+    await this.setupDatabaseListener();
+    
+    // 起動時に未処理のタスクをチェック
+    await this.checkPendingTasks();
+    
+    console.log('✅ Upload processor started (event-driven mode)');
+  }
+
+  // PostgreSQL LISTEN設定
+  async setupDatabaseListener() {
+    try {
+      // 専用のPostgreSQL接続を作成
+      this.pgClient = new Client({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD
+      });
+      
+      await this.pgClient.connect();
+      console.log('🔗 Upload processor connected to PostgreSQL');
+      
+      // rpa_queue_eventsチャンネルをLISTEN
+      await this.pgClient.query('LISTEN rpa_queue_events');
+      console.log('👂 Listening for queue events...');
+      
+      // NOTIFYイベントを処理
+      this.pgClient.on('notification', async (msg) => {
+        if (msg.channel === 'rpa_queue_events') {
+          try {
+            const payload = JSON.parse(msg.payload);
+            console.log('📢 Queue event received:', payload);
+            
+            // ステータスに応じて処理
+            if (payload.status === 'pending') {
+              // 新しいタスクが追加された
+              console.log('🆕 New task detected, starting PAD...');
+              await this.executePAD(payload.id);
+            } else if (payload.status === 'done') {
+              // PADが完了した
+              console.log('✅ Task completed by PAD');
+              await this.handleTaskCompletion(payload.id);
+            } else if (payload.status === 'failed') {
+              // PADが失敗した
+              console.log('❌ Task failed');
+              await this.checkNextTask();
+            }
+          } catch (error) {
+            console.error('Failed to process notification:', error);
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('Failed to setup database listener:', error);
+      throw error;
+    }
+  }
+
+  // 起動時に未処理タスクをチェック
+  async checkPendingTasks() {
+    try {
+      const query = `
+        SELECT q.id as queue_id
+        FROM rpa_queue q
+        WHERE q.status = 'pending'
+        ORDER BY q.created_at
+        LIMIT 1
+      `;
+      
+      const result = await db.query(query);
+      
+      if (result.rows.length > 0) {
+        console.log(`📦 Found pending task at startup: Queue #${result.rows[0].queue_id}`);
+        await this.executePAD(result.rows[0].queue_id);
+      } else {
+        console.log('📭 No pending tasks at startup');
+      }
+    } catch (error) {
+      console.error('❌ Error checking pending tasks:', error);
+    }
+  }
+
+  // タスク完了後の処理（ファイル移動と次のタスク実行）
+  async handleTaskCompletion(queueId) {
+    try {
+      // タスク情報を取得
+      const taskQuery = `
+        SELECT 
+          q.id as queue_id,
+          q.file_id,
+          d.fileName,
+          d.pass as file_path,
+          d.patientID
+        FROM rpa_queue q
+        JOIN Documents d ON q.file_id = d.fileID
+        WHERE q.id = $1
+      `;
+      
+      const taskResult = await db.query(taskQuery, [queueId]);
+      
+      if (taskResult.rows.length > 0) {
+        const task = taskResult.rows[0];
+        
+        // ファイルを「uploaded」フォルダに移動
+        await this.moveFileToUploaded(task);
+        
+        console.log(`📁 File moved to uploaded folder: ${task.filename}`);
+      }
+      
+      // 次のpendingタスクを探して実行
+      await this.checkNextTask();
+      
+    } catch (error) {
+      console.error('❌ Error handling task completion:', error);
+    }
+  }
+
+  // 次のタスクをチェックして実行
+  async checkNextTask() {
+    try {
+      const query = `
+        SELECT q.id as queue_id
+        FROM rpa_queue q
+        WHERE q.status = 'pending'
+        ORDER BY q.created_at
+        LIMIT 1
+      `;
+      
+      const result = await db.query(query);
+      
+      if (result.rows.length > 0) {
+        const nextTask = result.rows[0];
+        console.log(`\n🔄 Starting next task: Queue #${nextTask.queue_id}`);
+        await this.executePAD(nextTask.queue_id);
+      } else {
+        console.log('📭 No more pending tasks');
+      }
+    } catch (error) {
+      console.error('❌ Error checking next task:', error);
+    }
+  }
+
+  // PADフローを実行
+  async executePAD(queueId) {
+    try {
+      // タスク詳細を取得
+      const taskQuery = `
+        SELECT 
+          q.id as queue_id,
+          q.file_id,
+          d.fileName,
+          d.pass as file_path,
+          d.patientID,
+          d.Category
+        FROM rpa_queue q
+        JOIN Documents d ON q.file_id = d.fileID
+        WHERE q.id = $1
+      `;
+      
+      const result = await db.query(taskQuery, [queueId]);
+      
+      if (result.rows.length === 0) {
+        console.error(`❌ Task not found: ${queueId}`);
+        return false;
+      }
+      
+      const task = result.rows[0];
+      
+      return new Promise((resolve) => {
+        // ファイルパスを分割
+        const baseDir = path.dirname(task.file_path);
+        const fileName = path.basename(task.file_path);
+        
+        // PAD用の入力引数を作成（JSON形式）
+        const inputArgs = {
+          queue_id: task.queue_id,
+          PatientID: task.patientid,
+          BaseDir: baseDir,
+          fileName: fileName,
+          Category: task.category
+        };
+        
+        // URL形式でコマンドを作成
+        const url = `ms-powerautomate:/console/flow/run?workflowName=${this.flowName}&inputArguments=${encodeURIComponent(JSON.stringify(inputArgs))}`;
+        const args = `"${this.padPath}" "${url}"`;
+        
+        console.log(`\n${'='.repeat(60)}`);
+        console.log(`🤖 PAD実行開始: ${new Date().toLocaleString('ja-JP')}`);
+        console.log(`${'='.repeat(60)}`);
+        console.log(`📋 Queue ID: ${task.queue_id}`);
+        console.log(`👤 Patient ID: ${task.patientid}`);
+        console.log(`📁 Base Directory: ${baseDir}`);
+        console.log(`📄 File Name: ${fileName}`);
+        console.log(`🏷️ Category: ${task.category}`);
+        console.log(`${'='.repeat(60)}`);
+        console.log(`⏳ PADフロー実行中...`);
+        
+        exec(args, (error, stdout, stderr) => {
+          if (error) {
+            console.error('❌ PAD execution error:', error);
+            resolve(false);
+            return;
+          }
+          
+          if (stderr) {
+            console.error('⚠️ PAD stderr:', stderr);
+          }
+          
+          if (stdout) {
+            console.log('📝 PAD output:', stdout);
+          }
+          
+          // PADが完了した（PADがステータスを更新する）
+          console.log(`✅ PAD実行完了: ${new Date().toLocaleString('ja-JP')}`);
+          console.log(`${'='.repeat(60)}\n`);
+          resolve(true);
+        });
+      });
+    } catch (error) {
+      console.error('❌ Error executing PAD:', error);
+      return false;
+    }
+  }
+
+  // ファイルをuploadedフォルダに移動
+  async moveFileToUploaded(task) {
+    try {
+      const oldPath = task.file_path;
+      const fileName = path.basename(oldPath);
+      const patientDir = path.dirname(oldPath);
+      const uploadedDir = path.join(patientDir, 'uploaded');
+      const newPath = path.join(uploadedDir, fileName);
+      
+      // uploadedディレクトリを作成（存在しない場合）
+      await fs.mkdir(uploadedDir, { recursive: true });
+      
+      // ファイルを移動
+      await fs.rename(oldPath, newPath);
+      
+      console.log(`📁 Moved file: ${fileName}`);
+      console.log(`   From: ${oldPath}`);
+      console.log(`   To: ${newPath}`);
+      
+      // データベースのパスを更新
+      await this.updateDocumentPath(task.file_id, newPath);
+      
+    } catch (error) {
+      console.error('❌ Error moving file:', error);
+      throw error;
+    }
+  }
+
+  // Documentsテーブルのパスを更新
+  async updateDocumentPath(fileId, newPath) {
+    try {
+      const query = `
+        UPDATE Documents
+        SET pass = $1,
+            uploaded_at = CURRENT_TIMESTAMP
+        WHERE fileID = $2
+      `;
+      
+      await db.query(query, [newPath, fileId]);
+      console.log(`✅ Updated document path in database`);
+      
+    } catch (error) {
+      console.error('❌ Error updating document path:', error);
+      throw error;
+    }
+  }
+
+  // プロセッサーを停止
+  async stop() {
+    console.log('🛑 Stopping upload processor...');
+    
+    if (this.pgClient) {
+      await this.pgClient.end();
+    }
+    
+    console.log('✅ Upload processor stopped');
+  }
+}
+
+module.exports = UploadProcessor;
