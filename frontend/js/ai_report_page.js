@@ -73,6 +73,19 @@ class AIReportPage {
         if (backToStep1Btn) {
             backToStep1Btn.addEventListener('click', () => this.backToKarteInput());
         }
+
+        // URLパラメータをチェック（保存成功フラグ）
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('saved') === 'true') {
+            // 少し遅延させてトーストを表示（ページロード完了後）
+            setTimeout(() => {
+                this.showToast('報告書をAI作成して保存しました', 'success');
+            }, 100);
+
+            // パラメータをURLから削除（履歴に残さない）
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
     }
 
     /**
@@ -232,6 +245,12 @@ class AIReportPage {
         document.getElementById('karteStep1').style.display = 'none';
         document.getElementById('karteStep2').style.display = 'block';
 
+        // Step2に進んだらタブを非表示にする
+        const tabContainer = document.querySelector('.report-tabs');
+        if (tabContainer) {
+            tabContainer.style.display = 'none';
+        }
+
         // エラーメッセージを非表示
         document.getElementById('confirmationError').style.display = 'none';
     }
@@ -256,6 +275,12 @@ class AIReportPage {
         document.getElementById('karteStep2').style.display = 'none';
         document.getElementById('karteStep1').style.display = 'block';
         this.confirmedPatient = null;
+
+        // Step1に戻ったらタブを再表示
+        const tabContainer = document.querySelector('.report-tabs');
+        if (tabContainer) {
+            tabContainer.style.display = 'flex';
+        }
     }
 
     /**
@@ -848,9 +873,20 @@ class AIReportPage {
             // ステップ2では次へボタンを非表示（AI生成ボタンがあるため）
             nextBtn.style.display = this.currentStep === 1 ? 'block' : 'none';
             if (this.currentStep === 2) {
+                // Step2に進んだらタブを非表示にする（患者選択タブの場合）
+                const tabContainer = document.querySelector('.report-tabs');
+                if (tabContainer) {
+                    tabContainer.style.display = 'none';
+                }
                 // ステップ2に移動した時にデータをフォームに設定
                 this.populateStep2Data();
                 this.validateStep2();
+            } else if (this.currentStep === 1) {
+                // Step1に戻ったらタブを再表示（患者選択タブの場合）
+                const tabContainer = document.querySelector('.report-tabs');
+                if (tabContainer) {
+                    tabContainer.style.display = 'flex';
+                }
             }
         }
     }
@@ -1149,23 +1185,41 @@ class AIReportPage {
      * フォームデータを収集
      */
     collectFormData() {
-        return {
-            // 患者基本情報
-            patientId: document.getElementById('patientId')?.value || '',
-            patientName: document.getElementById('patientName')?.value || '',
-            birthdate: document.getElementById('birthdate')?.value || '',
-            age: document.getElementById('age')?.value || '',
-            address: document.getElementById('address')?.value || '',
+        // confirmedPatientから優先的にデータを取得（カルテ貼り付けタブ対応）
+        const patient = this.confirmedPatient || {};
 
-            // 医療関係者情報
-            cmName: document.getElementById('cmName')?.value || '',
-            officeName: document.getElementById('officeName')?.value || '',
-            officeAddress: document.getElementById('officeAddress')?.value || '',
+        return {
+            // 患者基本情報（confirmedPatientから取得、なければDOM要素から）
+            patientId: patient.patientid || document.getElementById('patientId')?.value || '',
+            patientName: patient.patientname || document.getElementById('patientName')?.value || '',
+            birthdate: patient.birthdate || document.getElementById('birthdate')?.value || '',
+            age: this.calculateAge(patient.birthdate) || document.getElementById('age')?.value || '',
+            address: patient.address || document.getElementById('address')?.value || '',
+
+            // 医療関係者情報（confirmedPatientから取得、なければDOM要素から）
+            cmName: patient.cm_name || document.getElementById('cmName')?.value || '',
+            officeName: patient.office_name || document.getElementById('officeName')?.value || '',
+            officeAddress: patient.office_address || document.getElementById('officeAddress')?.value || '',
             doctorName: document.getElementById('doctorName')?.value || 'たすくホームクリニック医師',
 
             // カルテ内容（ここから診療情報を自動抽出）
             karteContent: document.getElementById('karteContent')?.value || ''
         };
+    }
+
+    /**
+     * 年齢を計算
+     */
+    calculateAge(birthdate) {
+        if (!birthdate) return '';
+        const birth = new Date(birthdate);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return age.toString();
     }
 
     /**
@@ -1413,8 +1467,16 @@ class AIReportPage {
         // デフォルトオプション
         dropdown.innerHTML = '<option value="">患者を選択してください...</option>';
 
+        // 患者をID順にソート
+        const sortedPatients = [...patients].sort((a, b) => {
+            // patientidを数値として比較
+            const idA = parseInt(a.patientid) || 0;
+            const idB = parseInt(b.patientid) || 0;
+            return idA - idB;
+        });
+
         // 患者オプションを追加
-        patients.forEach(patient => {
+        sortedPatients.forEach(patient => {
             const option = document.createElement('option');
             option.value = patient.patientid;
             option.textContent = `${patient.patientid} -- ${patient.patientname}`;

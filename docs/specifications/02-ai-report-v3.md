@@ -2,7 +2,8 @@
 
 ## 更新履歴
 - v2.4.0: フィルター・ソート機能、作成履歴管理追加
-- v3.0.0: **カルテ貼り付けタブ機能、2カラム患者確認画面追加** 🆕
+- v3.0.0: **カルテ貼り付けタブ機能、2カラム患者確認画面追加**
+- v3.1.0: **UX改善（高速遷移、タブ制御強化）** 🆕
 
 ## 機能概要
 診察カルテをコピー＆ペーストすることで、AIが自動的に内容を要約し、居宅療養管理指導報告書を即座に生成する機能。**2つの開始方法**を提供し、様々な業務フローに対応。
@@ -187,16 +188,17 @@ CREATE INDEX idx_documents_patient_ai_created
 ON Documents(patientID, is_ai_generated, created_at DESC);
 ```
 
-## 実装ファイル（v3.0.0 更新）
+## 実装ファイル（v3.1.0 更新）
 
 ### フロントエンド
-- `frontend/ai_report.html` - タブUI、2カラム確認画面追加
-- `frontend/js/ai_report_page.js` - タブ切替、患者検索、DB照合ロジック追加
-- `frontend/css/ai_report.css` - タブスタイル、2カラムレイアウト追加
+- `frontend/ai_report.html` - タブUI、2カラム確認画面
+- `frontend/js/ai_report_page.js` - タブ切替、患者検索、DB照合、**Step2タブ制御**（v3.1.0）🆕
+- `frontend/css/ai_report.css` - タブスタイル、2カラムレイアウト
+- `frontend/templates/kyotaku_report_template.html` - **自動遷移タイマー1秒に短縮**（v3.1.0）🆕
 
 ### バックエンド
-- `backend/controllers/patientsController.js` - searchPatient API追加（書類履歴付き）
-- `backend/routes/patients.js` - /searchルート追加
+- `backend/controllers/patientsController.js` - searchPatient API（書類履歴付き）
+- `backend/routes/patients.js` - /searchルート
 
 ## 利点と効果
 
@@ -204,16 +206,58 @@ ON Documents(patientID, is_ai_generated, created_at DESC);
 - **カルテ貼り付けタブ**: 電子カルテから直接コピペで最速作成
 - **患者確認画面**: 間違った患者での作成を防止
 - **書類履歴表示**: 重複作成の防止、過去の報告書確認
+- **高速画面遷移**: PDF保存後1秒で次の作業へ（v3.1.0）🆕
 
 ### ユーザビリティ
 - **2つの開始方法**: 状況に応じた柔軟な選択
 - **2カラムレイアウト**: 情報の整理と視覚的確認
 - **大きな患者名表示**: 誤認防止と確認のしやすさ
+- **誤操作防止**: Step2以降でタブを自動非表示（v3.1.0）🆕
 
 ### データ整合性
 - **DB照合**: カルテの情報とDBの正確な情報を統合
 - **deterministic情報**: ケアオフィス、ケアマネ等の確定情報を自動取得
 - **履歴管理**: 過去の作成履歴をトラッキング
+
+## UX改善詳細（v3.1.0追加）
+
+### 高速化
+- **自動遷移の最適化**: PDF保存成功後、1秒で患者選択画面へ遷移
+  - 従来: 2秒待機 → 改善: 1秒待機
+  - 連続作業のテンポ向上
+  - 視覚的フィードバック後の迅速な画面切り替え
+
+### 誤操作防止
+- **インテリジェントタブ制御**: ワークフロー進行に応じたタブ表示制御
+  - Step2進入時: タブを自動的に非表示
+  - 戻るボタン使用時: タブを再表示
+  - 誤クリックによるデータ損失を防止
+  - ワークフローの一貫性を保証
+
+### 実装技術
+```javascript
+// Step2進入時のタブ非表示
+showPatientConfirmation(patient) {
+    // ...患者情報表示処理...
+
+    // Step2に進んだらタブを非表示にする
+    const tabContainer = document.querySelector('.report-tabs');
+    if (tabContainer) {
+        tabContainer.style.display = 'none';
+    }
+}
+
+// Step1復帰時のタブ再表示
+backToKarteInput() {
+    // ...Step1への復帰処理...
+
+    // Step1に戻ったらタブを再表示
+    const tabContainer = document.querySelector('.report-tabs');
+    if (tabContainer) {
+        tabContainer.style.display = 'flex';
+    }
+}
+```
 
 ## 今後の拡張予定
 
@@ -221,6 +265,7 @@ ON Documents(patientID, is_ai_generated, created_at DESC);
 - 複数患者候補時の選択UI
 - カルテ貼り付けの履歴保存
 - 患者確認画面のカスタマイズ
+- さらなるUX最適化（アニメーション、トランジション）
 
 ### Phase 2（中期）
 - AIによる患者情報の高度な抽出

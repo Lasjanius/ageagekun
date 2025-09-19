@@ -2188,10 +2188,10 @@
                         // LocalStorageをクリア
                         this.clearLocalStorage();
 
-                        // 2秒後に患者選択画面に遷移
+                        // 1秒後に患者選択画面に遷移（保存成功フラグ付き）
                         setTimeout(() => {
-                            window.location.href = '/ai_report.html';
-                        }, 2000);
+                            window.location.href = '/ai_report.html?saved=true';
+                        }, 1000);
                     } else {
                         throw new Error(result.error || '保存に失敗しました');
                     }
