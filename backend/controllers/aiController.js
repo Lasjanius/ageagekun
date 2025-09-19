@@ -144,9 +144,9 @@ const saveKyotakuReport = async (req, res) => {
       await client.query('BEGIN');
 
       const insertQuery = `
-        INSERT INTO Documents (fileName, patientID, Category, FileType, pass, base_dir, isUploaded, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, false, CURRENT_TIMESTAMP)
-        RETURNING fileID, fileName, patientID, Category, FileType, pass, base_dir, isUploaded, created_at
+        INSERT INTO Documents (fileName, patientID, Category, FileType, pass, base_dir, isUploaded, is_ai_generated, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, false, true, CURRENT_TIMESTAMP)
+        RETURNING fileID, fileName, patientID, Category, FileType, pass, base_dir, isUploaded, is_ai_generated, created_at
       `;
 
       const { patientDir, fullPath } = formatters.buildFilePath(formattedPatientId, fileName);

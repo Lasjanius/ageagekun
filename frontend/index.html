@@ -39,7 +39,7 @@
                 <span class="hamburger__line"></span>
                 <span class="hamburger__line"></span>
             </button>
-            <h1 class="header__title">🚀 アゲアゲくん</h1>
+            <h1 class="header__title">😎 アゲアゲくん</h1>
             <div class="header__subtitle">モバカルネット書類自動アップロードシステム</div>
         </header>
 
@@ -82,23 +82,24 @@
         <!-- アクションバー -->
         <section class="actions">
             <input type="text" class="search-input" id="searchInput" placeholder="検索...">
+            <span class="filter-label">ステータス:</span>
             <div class="filter-buttons">
-                <button class="filter-btn filter-btn--active" id="filterAll" data-filter="all">全て</button>
-                <button class="filter-btn" id="filterPending" data-filter="pending">未</button>
+                <button class="filter-btn" id="filterAll" data-filter="all">全て</button>
+                <button class="filter-btn filter-btn--active" id="filterPending" data-filter="pending">未</button>
                 <button class="filter-btn" id="filterUploaded" data-filter="uploaded">済</button>
             </div>
+            <span class="filter-label">カテゴリ:</span>
+            <select id="categoryFilter" class="category-select">
+                <option value="all">全て</option>
+            </select>
             <label class="checkbox-wrapper">
                 <input type="checkbox" id="selectAllCheckbox">
                 <span>全て選択</span>
             </label>
-            <button class="btn btn--primary" id="uploadAllBtn" disabled>
+            <button class="btn btn--primary btn--large" id="uploadAllBtn" disabled>
                 <span class="btn__icon">⬆️</span>
                 <span class="btn__text">アップロード</span>
                 <span class="btn__count" id="selectedCount">(0)</span>
-            </button>
-            <button class="btn btn--ai" id="aiGenerateBtn">
-                <span class="btn__icon">🤖</span>
-                <span class="btn__text">AI作成</span>
             </button>
         </section>
 

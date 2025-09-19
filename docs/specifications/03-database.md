@@ -62,7 +62,7 @@ CREATE TABLE patients (
 
 ### 文書管理テーブル
 
-#### Documents
+#### Documents（v2.4.0で拡張）
 ```sql
 CREATE TABLE Documents (
     fileID SERIAL PRIMARY KEY,
@@ -73,6 +73,7 @@ CREATE TABLE Documents (
     pass VARCHAR(500),  -- ファイルの完全パス
     base_dir VARCHAR(500),  -- ディレクトリパス（ファイル名除く）
     isUploaded BOOLEAN DEFAULT false,
+    is_ai_generated BOOLEAN DEFAULT false,  -- v2.4.0追加
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     uploaded_at TIMESTAMP
 );
@@ -83,6 +84,7 @@ CREATE TABLE Documents (
 - `base_dir`: ファイルが存在するディレクトリパス
 - `isUploaded`: アップロード状態（false=未アップロード、true=完了）
 - `uploaded_at`: アップロード完了日時
+- `is_ai_generated`: AI報告書作成フラグ（v2.4.0追加）
 
 ### RPA処理テーブル
 
@@ -206,6 +208,10 @@ EXECUTE FUNCTION handle_rpa_queue_update();
 CREATE INDEX idx_documents_patient ON Documents(patientID);
 CREATE INDEX idx_documents_uploaded ON Documents(isUploaded);
 CREATE INDEX idx_documents_category ON Documents(Category);
+-- v2.4.0追加
+CREATE INDEX idx_documents_ai_flag ON Documents(is_ai_generated);
+CREATE INDEX idx_documents_created_at ON Documents(created_at);
+CREATE INDEX idx_documents_patient_ai ON Documents(patientID, is_ai_generated, created_at);
 
 -- rpa_queue
 CREATE INDEX idx_rpa_queue_status ON rpa_queue(status);

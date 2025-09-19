@@ -133,7 +133,7 @@ class AIReportGenerator {
      * イベントリスナー設定
      */
     setupEventListeners() {
-        // AI作成ボタン
+        // AI作成ボタン (index.htmlでは削除済み、ai_report.htmlで使用)
         const aiBtn = document.getElementById('aiGenerateBtn');
         if (aiBtn) {
             aiBtn.addEventListener('click', () => this.openModal());

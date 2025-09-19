@@ -7,7 +7,9 @@ const App = {
         uploadQueue: [],
         isUploading: false,
         currentUploadIndex: 0,
-        currentFilter: 'all', // 'all', 'pending', 'uploaded'
+        currentFilter: 'pending', // 'all', 'pending', 'uploaded'
+        currentCategory: 'all', // カテゴリフィルタ
+        categories: [], // カテゴリ一覧
         ws: null, // WebSocket接続
         wsReconnectAttempts: 0,
         wsMaxReconnectAttempts: 5,
@@ -87,7 +89,12 @@ const App = {
         UI.elements.filterUploaded.addEventListener('click', () => {
             this.setFilter('uploaded');
         });
-        
+
+        // カテゴリフィルター
+        UI.elements.categoryFilter.addEventListener('change', (e) => {
+            this.setCategoryFilter(e.target.value);
+        });
+
         // 確認モーダル
         UI.elements.confirmYesBtn.addEventListener('click', () => {
             this.startUpload();
@@ -130,18 +137,23 @@ const App = {
     async loadData() {
         try {
             UI.showLoading();
-            
+
             // 並行してデータ取得
-            const [files, stats] = await Promise.all([
+            const [files, stats, categories] = await Promise.all([
                 API.getAllDocuments(),
-                API.getStatistics()
+                API.getStatistics(),
+                API.getCategories()
             ]);
             
             this.state.files = files;
-            
+            this.state.categories = categories;
+
+            // カテゴリプルダウンを更新
+            this.updateCategoryDropdown();
+
             // フィルタを適用
             this.filterFiles();
-            
+
             // UI更新
             UI.updateStatistics(stats);
             this.renderCurrentView();
@@ -183,6 +195,40 @@ const App = {
         this.filterFiles();
     },
 
+    // カテゴリフィルターを設定
+    setCategoryFilter(category) {
+        this.state.currentCategory = category;
+        this.filterFiles();
+    },
+
+    // カテゴリドロップダウンを更新
+    updateCategoryDropdown() {
+        const categoryFilter = UI.elements.categoryFilter;
+        if (!categoryFilter) return;
+
+        // 現在の選択値を保存
+        const currentValue = categoryFilter.value || 'all';
+
+        // オプションをクリアして再構築
+        categoryFilter.innerHTML = '<option value="all">全て</option>';
+
+        // カテゴリを追加
+        this.state.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+
+        // 以前の選択値を復元（存在する場合）
+        if (Array.from(categoryFilter.options).some(opt => opt.value === currentValue)) {
+            categoryFilter.value = currentValue;
+        } else {
+            categoryFilter.value = 'all';
+            this.state.currentCategory = 'all';
+        }
+    },
+
     // ファイルフィルタリング
     filterFiles() {
         const searchTerm = UI.elements.searchInput.value.toLowerCase();
@@ -196,6 +242,11 @@ const App = {
             filteredFiles = filteredFiles.filter(file => file.isuploaded);
         }
         // 'all' の場合はフィルタリングしない
+
+        // カテゴリフィルタ
+        if (this.state.currentCategory !== 'all') {
+            filteredFiles = filteredFiles.filter(file => file.category === this.state.currentCategory);
+        }
         
         // 検索フィルタ
         if (searchTerm) {

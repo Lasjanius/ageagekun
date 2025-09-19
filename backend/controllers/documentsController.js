@@ -185,10 +185,38 @@ const createDocument = async (req, res) => {
   }
 };
 
+// カテゴリ一覧を取得
+const getCategories = async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT Category as category
+      FROM Documents
+      WHERE Category IS NOT NULL
+      ORDER BY Category
+    `;
+
+    const result = await db.query(query);
+    const categories = result.rows.map(row => row.category);
+
+    res.json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch categories',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllDocuments,
   getPendingUploads,
   updateUploadStatus,
   getStatistics,
-  createDocument
+  createDocument,
+  getCategories
 };

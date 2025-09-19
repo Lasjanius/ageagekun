@@ -5,9 +5,17 @@
 
 ## 2ステップフロー詳細
 
-### ステップ1: 患者選択
+### ステップ1: 患者選択（v2.4.0で拡張）
 - 患者リストからカード形式で選択
 - 検索機能（患者名、ID、ケアマネ名）
+- **🆕 AI報告書作成履歴の表示**
+  - 各患者カードに最終作成日を表示
+  - 今月作成済みバッジの表示
+  - 未作成患者の視覚的識別（赤文字）
+- **🆕 フィルター・ソート機能**
+  - 並び順：患者名順、最新作成日順、古い作成日順
+  - フィルター：今月未作成患者のみ表示
+  - カテゴリー別フィルター（居宅等）
 - 選択後「次へ」ボタンが有効化
 
 ### ステップ2: カルテ入力・報告書生成
@@ -578,14 +586,15 @@ patients/
 ## 実装ファイル
 
 ### フロントエンド
-- `frontend/ai_report.html` - メインページ
-- `frontend/js/ai_report_page.js` - ロジック実装
-- `frontend/css/ai_report.css` - スタイリング
+- `frontend/ai_report.html` - メインページ（v2.4.0でフィルターUI追加）
+- `frontend/js/ai_report_page.js` - ロジック実装（v2.4.0でフィルター処理追加）
+- `frontend/css/ai_report.css` - スタイリング（v2.4.0でフィルターコンポーネント追加）
 - `frontend/templates/kyotaku_report_template.html` - 報告書テンプレート（編集・PDF保存機能含む）
 
 ### バックエンド
 - `backend/services/aiService.js` - AI処理サービス
 - `backend/services/pdfService.js` - PDF生成サービス（Puppeteer使用）
-- `backend/controllers/aiController.js` - APIコントローラー（PDF保存機能含む）
+- `backend/controllers/aiController.js` - APIコントローラー（PDF保存機能含む、v2.4.0で`is_ai_generated`フラグ追加）
+- `backend/controllers/patientsController.js` - 患者APIコントローラー（v2.4.0でAI報告書ステータス取得機能追加）
 - `backend/routes/ai.js` - ルーティング定義
 - `backend/utils/formatters.js` - ファイル名・パス生成ユーティリティ

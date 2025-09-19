@@ -276,6 +276,67 @@ const ws = new WebSocket('ws://localhost:3000');
 - `E004`: AI API エラー
 - `E005`: キュー処理エラー
 
+### 患者API（v2.4.0追加）
+
+#### GET /api/patients/ai-report-status
+AI報告書作成履歴を含む患者リスト取得
+
+**クエリパラメータ**:
+- `sort`: 並び順（name_asc, name_desc, last_ai_desc, last_ai_asc）
+- `filter`: フィルター（no-ai-this-month）
+- `category`: カテゴリーフィルター
+
+**レスポンス**:
+```json
+{
+  "success": true,
+  "count": 3,
+  "patients": [
+    {
+      "patientid": 99999999,
+      "patientname": "テスト太郎",
+      "last_ai_generated_at": "2025/9/18",
+      "ai_report_count": 2,
+      "has_ai_this_month": true,
+      "ai_categories": ["居宅"]
+    }
+  ]
+}
+```
+
+#### GET /api/patients/ai-report-categories
+AI報告書のカテゴリー一覧取得
+
+**レスポンス**:
+```json
+{
+  "success": true,
+  "categories": ["居宅", "居宅療養管理指導報告書"]
+}
+```
+
+#### GET /api/patients/search
+患者をIDまたは名前で検索
+
+**クエリパラメータ**:
+- `patientId`: 患者ID
+- `patientName`: 患者名（部分一致）
+
+**レスポンス**:
+```json
+{
+  "success": true,
+  "patient": {
+    "patientID": 99999999,
+    "patientName": "テスト太郎",
+    "birthdate": "1950-01-01",
+    "address": "東京都千代田区",
+    "cm_name": "ケアマネA",
+    "office_name": "Care Plan Center A"
+  }
+}
+```
+
 ## レート制限
 - 通常API: 100リクエスト/分
 - AI API: 10リクエスト/分

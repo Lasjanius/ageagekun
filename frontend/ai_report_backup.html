@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI報告書作成 - アゲアゲくん</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😎</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/ai_report.css">
+</head>
+<body>
+    <!-- サイドバー -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <h2 class="sidebar__title">メニュー</h2>
+            <button class="sidebar__close" id="sidebarClose">×</button>
+        </div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">
+                <span class="sidebar__icon">📤</span>
+                <span class="sidebar__text">自動アップロード</span>
+            </a>
+            <a href="ai_report.html" class="sidebar__link sidebar__link--active">
+                <span class="sidebar__icon">🤖</span>
+                <span class="sidebar__text">AI報告書作成</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <button class="hamburger" id="hamburgerBtn">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
+            <h1 class="header__title">🤖 AI報告書作成</h1>
+            <div class="header__subtitle">居宅療養管理指導報告書自動生成システム</div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <section class="ai-report-container">
+            <!-- ステップインジケーター -->
+            <div class="ai-steps">
+                <div class="ai-step active" data-step="1">
+                    <div class="ai-step-number">1</div>
+                    <div class="ai-step-label">患者選択</div>
+                </div>
+                <div class="ai-step" data-step="2">
+                    <div class="ai-step-number">2</div>
+                    <div class="ai-step-label">カルテ入力・報告書生成</div>
+                </div>
+            </div>
+
+            <!-- ステップ1: 患者選択 -->
+            <div class="ai-step-content active" id="step1">
+                <h3>患者を選択してください</h3>
+                <div class="patient-search-container">
+                    <input type="text"
+                           class="patient-search-input"
+                           id="patientSearchInput"
+                           placeholder="🔍 患者名、患者ID、ケアマネージャー名で検索...">
+                </div>
+                <div class="patient-select-grid" id="patientGrid">
+                    <div class="loading">
+                        <div class="loading__spinner"></div>
+                        <div class="loading__text">患者リストを読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステップ2: 詳細情報入力 -->
+            <div class="ai-step-content" id="step2">
+                <h3>レポート情報を確認・編集してください</h3>
+
+                <!-- 2カラムコンテナ -->
+                <div class="two-column-container">
+                    <!-- 左カラム: 患者・医療関係者情報 -->
+                    <div class="left-column">
+                        <!-- 患者基本情報 -->
+                        <div class="info-section">
+                            <div class="section-title">👤 患者基本情報</div>
+                            <div class="info-grid">
+                                <div class="info-field">
+                                    <label>患者ID</label>
+                                    <input type="text" id="patientId" readonly class="readonly-field">
+                                </div>
+                                <div class="info-field">
+                                    <label>患者名</label>
+                                    <input type="text" id="patientName">
+                                </div>
+                                <div class="info-field">
+                                    <label>生年月日</label>
+                                    <input type="date" id="birthdate">
+                                </div>
+                                <div class="info-field">
+                                    <label>年齢</label>
+                                    <input type="text" id="age" readonly class="readonly-field">
+                                </div>
+                                <div class="info-field full-width">
+                                    <label>住所</label>
+                                    <input type="text" id="address">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 医療関係者情報 -->
+                        <div class="info-section">
+                            <div class="section-title">🏥 医療関係者情報</div>
+                            <div class="info-grid">
+                                <div class="info-field">
+                                    <label>ケアマネージャー</label>
+                                    <input type="text" id="cmName">
+                                </div>
+                                <div class="info-field">
+                                    <label>事業所名</label>
+                                    <input type="text" id="officeName">
+                                </div>
+                                <div class="info-field full-width">
+                                    <label>事業所住所</label>
+                                    <input type="text" id="officeAddress">
+                                </div>
+                                <div class="info-field">
+                                    <label>医師名</label>
+                                    <input type="text" id="doctorName" value="たすくホームクリニック医師">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右カラム: カルテ内容とAI生成 -->
+                    <div class="right-column">
+                        <!-- カルテ内容 -->
+                        <div class="info-section karte-section">
+                            <div class="section-title">📝 カルテ内容</div>
+                            <textarea
+                                class="karte-textarea-large"
+                                id="karteContent"
+                                placeholder="カルテ内容を貼り付けてください。&#10;&#10;例:&#10;2024/1/15 訪問診療&#10;BP 135/82, P 72, BT 36.5&#10;HbA1c 7.2% (前回7.5%)&#10;血糖値 142mg/dl&#10;膝痛(-)、歩行安定&#10;処方継続：メトホルミン500mg 1T/1x朝"
+                            ></textarea>
+                        </div>
+
+                        <!-- AI生成ボタン -->
+                        <div class="ai-generate-section">
+                            <button class="btn-ai-generate" id="aiGenerateBtn">
+                                <span class="btn-ai-icon">🤖</span>
+                                <span>この内容でレポートをAI生成する</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ナビゲーションボタン -->
+            <div class="ai-modal-footer">
+                <button class="btn-nav btn-nav--secondary" id="prevBtn" style="display: none;">
+                    <span class="btn-nav__text">← 戻る</span>
+                </button>
+                <button class="btn-nav btn-nav--primary" id="nextBtn" disabled>
+                    <span class="btn-nav__text">次へ →</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 生成中インジケーター -->
+        <div class="ai-generating" id="generatingIndicator" style="display: none;">
+            <div class="ai-generating-spinner"></div>
+            <div class="ai-generating-text">AI報告書を生成中...</div>
+        </div>
+
+        <!-- トースト通知エリア -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ai_report_page.js"></script>
+</body>
+</html>

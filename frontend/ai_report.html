@@ -45,27 +45,203 @@
 
         <!-- メインコンテンツ -->
         <section class="ai-report-container">
-            <!-- ステップインジケーター -->
-            <div class="ai-steps">
-                <div class="ai-step active" data-step="1">
-                    <div class="ai-step-number">1</div>
-                    <div class="ai-step-label">患者選択</div>
-                </div>
-                <div class="ai-step" data-step="2">
-                    <div class="ai-step-number">2</div>
-                    <div class="ai-step-label">カルテ入力・報告書生成</div>
-                </div>
+            <!-- タブナビゲーション -->
+            <div class="report-tabs">
+                <button class="report-tab report-tab--active" id="pasteKarteTab" data-tab="paste-karte">
+                    <span class="tab__icon">📋</span>
+                    <span class="tab__text">カルテを貼り付けて始める</span>
+                </button>
+                <button class="report-tab" id="selectPatientTab" data-tab="select-patient">
+                    <span class="tab__icon">👥</span>
+                    <span class="tab__text">患者を選んで始める</span>
+                </button>
             </div>
 
-            <!-- ステップ1: 患者選択 -->
-            <div class="ai-step-content active" id="step1">
-                <h3>患者を選択してください</h3>
-                <div class="patient-search-container">
+            <!-- タブコンテンツ -->
+            <div class="tab-contents">
+                <!-- カルテを貼り付けて始めるタブ -->
+                <div class="tab-content tab-content--active" id="pasteKarteContent">
+                    <!-- Step 1: カルテ入力 -->
+                    <div class="karte-paste-container" id="karteStep1">
+                        <h3>カルテ内容を貼り付けてください</h3>
+                        <div class="karte-paste-description">
+                            診療記録をコピー＆ペーストして、AI報告書を自動生成します。
+                        </div>
+                        <textarea
+                            class="karte-paste-textarea"
+                            id="directKarteInput"
+                            placeholder="カルテ内容をここに貼り付けてください。&#10;&#10;例:&#10;患者名: 田中太郎&#10;患者ID: 12345678&#10;生年月日: 1950/01/01&#10;&#10;2024/1/15 訪問診療&#10;BP 135/82, P 72, BT 36.5&#10;HbA1c 7.2% (前回7.5%)&#10;血糖値 142mg/dl&#10;膝痛(-)、歩行安定&#10;処方継続：メトホルミン500mg 1T/1x朝&#10;&#10;ケアマネージャー: 佐藤花子&#10;次回診察: 2024/2/15"
+                        ></textarea>
+                        <div class="karte-paste-actions">
+                            <button class="btn-generate-from-paste" id="generateFromPaste" disabled>
+                                <span class="btn-icon">🔍</span>
+                                <span>患者を検索</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: 患者確認画面 -->
+                    <div class="karte-step2-confirmation" id="karteStep2" style="display: none;">
+                        <h3>患者情報を確認してください</h3>
+
+                        <div class="confirmation-columns">
+                            <!-- 左カラム：メイン確認エリア -->
+                            <div class="confirm-left-column">
+                                <div class="patient-main-confirm">
+                                    <div class="patient-id-display">
+                                        ID: <span id="confirmPatientIdMain">-</span>
+                                    </div>
+                                    <div class="patient-name-display" id="confirmPatientNameMain">
+                                        -
+                                    </div>
+                                    <div class="confirm-message">
+                                        この患者で報告書を作成しますか？
+                                    </div>
+
+                                    <div class="confirmation-error" id="confirmationError" style="display: none;">
+                                        <span class="error-icon">⚠️</span>
+                                        <span class="error-message"></span>
+                                    </div>
+
+                                    <div class="confirmation-buttons">
+                                        <button class="btn-confirm" id="confirmPatientBtn">
+                                            <span class="btn-icon">✅</span>
+                                            <span>報告書を作成</span>
+                                        </button>
+                                        <button class="btn-change-patient" id="changePatientBtn">
+                                            <span class="btn-icon">🔄</span>
+                                            <span>別の患者を選択する</span>
+                                        </button>
+                                        <button class="btn-back" id="backToStep1Btn">
+                                            <span class="btn-icon">←</span>
+                                            <span>戻る</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右カラム：詳細情報 -->
+                            <div class="confirm-right-column">
+                                <!-- 基本情報 -->
+                                <div class="detail-section">
+                                    <h4>👤 基本情報</h4>
+                                    <div class="detail-info-grid">
+                                        <div class="detail-info-item">
+                                            <label>生年月日</label>
+                                            <span id="confirmBirthdate">-</span>
+                                        </div>
+                                        <div class="detail-info-item">
+                                            <label>住所</label>
+                                            <span id="confirmAddress">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ケアオフィス情報 -->
+                                <div class="detail-section">
+                                    <h4>🏢 ケアオフィス情報</h4>
+                                    <div class="detail-info-grid">
+                                        <div class="detail-info-item">
+                                            <label>事業所名</label>
+                                            <span id="confirmOfficeName">-</span>
+                                        </div>
+                                        <div class="detail-info-item">
+                                            <label>ケアマネージャー</label>
+                                            <span id="confirmCmName">-</span>
+                                        </div>
+                                        <div class="detail-info-item">
+                                            <label>事業所住所</label>
+                                            <span id="confirmOfficeAddress">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 訪問看護ステーション -->
+                                <div class="detail-section" id="vnsSection" style="display: none;">
+                                    <h4>🏥 訪問看護ステーション</h4>
+                                    <div class="detail-info-grid">
+                                        <div class="detail-info-item">
+                                            <label>ステーション名</label>
+                                            <span id="confirmVnsName">-</span>
+                                        </div>
+                                        <div class="detail-info-item">
+                                            <label>住所</label>
+                                            <span id="confirmVnsAddress">-</span>
+                                        </div>
+                                        <div class="detail-info-item">
+                                            <label>電話番号</label>
+                                            <span id="confirmVnsTel">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 過去の書類作成履歴 -->
+                                <div class="detail-section">
+                                    <h4>📋 過去の書類作成履歴</h4>
+                                    <ul class="document-history" id="documentHistory">
+                                        <li class="no-history">過去の書類作成履歴はありません</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 患者を選んで始めるタブ -->
+                <div class="tab-content" id="selectPatientContent">
+                    <!-- ステップインジケーター削除（スペース節約） -->
+                    <!--
+                    <div class="ai-steps">
+                        <div class="ai-step active" data-step="1">
+                            <div class="ai-step-number">1</div>
+                            <div class="ai-step-label">患者選択</div>
+                        </div>
+                        <div class="ai-step" data-step="2">
+                            <div class="ai-step-number">2</div>
+                            <div class="ai-step-label">カルテ入力・報告書生成</div>
+                        </div>
+                    </div>
+                    -->
+
+                    <!-- ステップ1: 患者選択 -->
+                    <div class="ai-step-content active" id="step1">
+                <div class="patient-header-row">
+                    <h3>患者を選択してください</h3>
                     <input type="text"
                            class="patient-search-input"
                            id="patientSearchInput"
                            placeholder="🔍 患者名、患者ID、ケアマネージャー名で検索...">
                 </div>
+
+                <!-- フィルター・ソートコントロール -->
+                <div class="filter-controls">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="sortOrder">並び順:</label>
+                            <select id="sortOrder" class="filter-select">
+                                <option value="name_asc">患者名 (あ→わ)</option>
+                                <option value="name_desc">患者名 (わ→あ)</option>
+                                <option value="last_ai_desc">最新作成日順</option>
+                                <option value="last_ai_asc">古い作成日順</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="categoryFilter">カテゴリー:</label>
+                            <select id="categoryFilter" class="filter-select">
+                                <option value="">全てのカテゴリー</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="filterNoAI" class="filter-checkbox">
+                                <span>今月未作成の患者のみ</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="patient-select-grid" id="patientGrid">
                     <div class="loading">
                         <div class="loading__spinner"></div>
@@ -153,12 +329,13 @@
                             </button>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-
-            <!-- ナビゲーションボタン -->
-            <div class="ai-modal-footer">
+            <!-- ナビゲーションボタン（患者選択タブ用） -->
+            <div class="ai-modal-footer" id="patientTabFooter" style="display: none;">
                 <button class="btn-nav btn-nav--secondary" id="prevBtn" style="display: none;">
                     <span class="btn-nav__text">← 戻る</span>
                 </button>
@@ -176,6 +353,41 @@
 
         <!-- トースト通知エリア -->
         <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- 患者選択モーダル -->
+    <div class="patient-modal-backdrop" id="patientModalBackdrop" style="display: none;">
+        <div class="patient-modal-container">
+            <div class="patient-modal-header">
+                <h3>患者を選択してください</h3>
+                <button class="modal-close-btn" id="modalCloseBtn">
+                    <span>×</span>
+                </button>
+            </div>
+            <div class="patient-modal-content">
+                <div class="patient-search-filter">
+                    <input type="text"
+                           class="modal-search-input"
+                           id="modalSearchInput"
+                           placeholder="🔍 患者名またはIDで検索...">
+                </div>
+                <div class="patient-select-container">
+                    <select class="patient-dropdown" id="patientDropdown" size="15">
+                        <option value="">患者データを読み込み中...</option>
+                    </select>
+                </div>
+                <div class="patient-modal-actions">
+                    <button class="btn-modal-confirm" id="modalConfirmBtn" disabled>
+                        <span class="btn-icon">✅</span>
+                        <span>この患者を選択</span>
+                    </button>
+                    <button class="btn-modal-cancel" id="modalCancelBtn">
+                        <span class="btn-icon">❌</span>
+                        <span>キャンセル</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript -->

@@ -31,7 +31,8 @@ const UI = {
             filterAll: document.getElementById('filterAll'),
             filterPending: document.getElementById('filterPending'),
             filterUploaded: document.getElementById('filterUploaded'),
-            
+            categoryFilter: document.getElementById('categoryFilter'),
+
             // ビューコンテナ
             patientView: document.getElementById('patientView'),
             documentView: document.getElementById('documentView'),

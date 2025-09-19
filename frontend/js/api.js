@@ -42,6 +42,17 @@ const API = {
         }
     },
 
+    // カテゴリ一覧を取得
+    async getCategories() {
+        try {
+            const response = await this.request('/documents/categories');
+            return response.data || [];
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+            return [];
+        }
+    },
+
     // 未アップロードファイル一覧を取得
     async getPendingUploads() {
         try {
