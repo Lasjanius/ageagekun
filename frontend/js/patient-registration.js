@@ -328,9 +328,19 @@ function setupNewRegistrationButtons() {
     // ケアマネージャー新規登録
     const newCmBtn = document.getElementById('newCmBtn');
     if (newCmBtn) {
-        newCmBtn.addEventListener('click', () => {
-            elements.cmModal.style.display = 'block';
-            loadOfficesForCM();
+        newCmBtn.addEventListener('click', async () => {
+            window.modalManager.open('cmModal', {
+                hideNestedButtons: true  // ネストボタンを非表示
+            });
+            document.getElementById('cmForm').reset();
+
+            // 居宅新規登録ボタンを非表示
+            const officeBtn = document.getElementById('newOfficeFromCmBtn');
+            if (officeBtn) {
+                officeBtn.style.display = 'none';
+            }
+
+            await updateOfficeSelectForCM();
         });
     }
 
@@ -338,7 +348,8 @@ function setupNewRegistrationButtons() {
     const newOfficeBtn = document.getElementById('newOfficeBtn');
     if (newOfficeBtn) {
         newOfficeBtn.addEventListener('click', () => {
-            elements.officeModal.style.display = 'block';
+            window.modalManager.open('officeModal');
+            document.getElementById('officeForm').reset();
         });
     }
 
@@ -346,175 +357,296 @@ function setupNewRegistrationButtons() {
     const newVnsBtn = document.getElementById('newVnsBtn');
     if (newVnsBtn) {
         newVnsBtn.addEventListener('click', () => {
-            elements.vnsModal.style.display = 'block';
+            window.modalManager.open('vnsModal');
+            document.getElementById('vnsForm').reset();
         });
     }
 
     // 各モーダルの設定
     setupCMModal();
-    setupOfficeModal();
+    setupOfficeModal(false);
     setupVNSModal();
 }
 
-// ケアマネージャーモーダル用に事業所一覧を取得
-async function loadOfficesForCM() {
+// ケアマネージャーモーダル用に事業所一覧を取得・更新
+async function updateOfficeSelectForCM(selectedValue = null) {
     try {
-        const response = await fetch(`${API_BASE}/care-offices`);
-        const data = await response.json();
+        const offices = await window.masterDataService.getCareOffices(true);
+        const select = document.getElementById('cmOffice');
 
-        const cmOfficeSelect = document.getElementById('cmOffice');
-        if (data.success && cmOfficeSelect) {
-            cmOfficeSelect.innerHTML = '<option value="">選択してください</option>';
-            data.offices.forEach(office => {
+        if (select) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">選択してください</option>';
+
+            offices.forEach(office => {
                 const option = document.createElement('option');
                 option.value = office.office_id;
                 option.textContent = office.name;
-                cmOfficeSelect.appendChild(option);
+                if (selectedValue && office.office_id === selectedValue) {
+                    option.selected = true;
+                } else if (currentValue && office.office_id == currentValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
             });
+
+            if (selectedValue) {
+                select.value = selectedValue;
+            }
         }
     } catch (error) {
-        console.error('事業所一覧の取得に失敗:', error);
+        console.error('事業所リストの更新に失敗:', error);
     }
 }
 
-// モーダル設定（重複コードをまとめる）
-function setupModal(modalId, config) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
+// セレクトボックスをリフレッシュ
+async function refreshSelects() {
+    // 現在の選択値を保存
+    const savedOffice = elements.officeSelect.value;
+    const savedCm = elements.cmSelect.value;
+    const savedVns = elements.vnsSelect.value;
 
-    const closeBtn = modal.querySelector('.modal__close');
-    const cancelBtn = modal.querySelector('[id*="cancel"]');
-    const saveBtn = modal.querySelector('[id*="save"]');
+    // データ再読み込み（これが全てをクリアする）
+    await loadMasterData();
 
+    // Office と VNS を即座に復元
+    elements.officeSelect.value = savedOffice;
+    elements.vnsSelect.value = savedVns;
+
+    // Office選択時はCMリストを再構築してから復元
+    if (savedOffice) {
+        // changeイベントでCMリストが非同期更新される
+        const changeEvent = new Event('change');
+        elements.officeSelect.dispatchEvent(changeEvent);
+
+        // CMの選択値も復元が必要な場合
+        if (savedCm) {
+            // CMリスト更新の完了を待つ
+            let attempts = 0;
+            const waitForCmOption = setInterval(() => {
+                const cmOption = elements.cmSelect.querySelector(`option[value="${savedCm}"]`);
+                if (cmOption) {
+                    elements.cmSelect.value = savedCm;
+                    clearInterval(waitForCmOption);
+                }
+                attempts++;
+                // 最大20回試行（1秒）でタイムアウト
+                if (attempts > 20) {
+                    clearInterval(waitForCmOption);
+                }
+            }, 50);
+        }
+    }
+}
+
+
+// ケアマネージャー登録モーダル
+function setupCMModal() {
+    const closeBtn = document.getElementById('closeCmModalBtn');
+    const cancelBtn = document.getElementById('cancelCmBtn');
+    const saveBtn = document.getElementById('saveCmBtn');
+    const form = document.getElementById('cmForm');
+
+    // 居宅介護支援事業所の新規登録ボタン（ネストモーダル）
+    const newOfficeFromCmBtn = document.getElementById('newOfficeFromCmBtn');
+    if (newOfficeFromCmBtn) {
+        newOfficeFromCmBtn.addEventListener('click', () => {
+            // ケアマネージャーモーダルの状態を保存
+            window.modalManager.saveModalState('cmModal');
+
+            // 居宅介護支援事業所モーダルを開く
+            window.modalManager.open('officeModal', {
+                onClose: async (result) => {
+                    if (result) {
+                        // 新規登録された事業所をセレクトに反映
+                        await updateOfficeSelectForCM(result.office_id);
+                        showToast(`事業所「${result.name}」が選択されました`, 'info');
+                    }
+                }
+            });
+
+            // ネストモーダル用の設定
+            setupOfficeModal(true);
+            document.getElementById('officeForm').reset();
+        });
+    }
+
+    // モーダルを閉じる
     const closeModal = () => {
-        modal.style.display = 'none';
-        if (config.onClose) config.onClose();
+        // ボタンの表示をリセット（次回のために）
+        const officeBtn = document.getElementById('newOfficeFromCmBtn');
+        if (officeBtn) {
+            officeBtn.style.display = '';  // デフォルトに戻す
+        }
+        window.modalManager.close('cmModal');
+        form.reset();
     };
 
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    if (saveBtn && config.onSave) {
+    // 保存処理
+    if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
-            const result = await config.onSave();
-            if (result) {
-                closeModal();
-                loadMasterData(); // データを再読み込み
-
-                // 事業所が選択されている場合は、その事業所のケアマネージャーも再読み込み
-                if (elements.officeSelect.value) {
-                    const changeEvent = new Event('change');
-                    elements.officeSelect.dispatchEvent(changeEvent);
-                }
-            }
-        });
-    }
-}
-
-// ケアマネージャー登録モーダル
-function setupCMModal() {
-    setupModal('cmModal', {
-        onSave: async () => {
             const name = document.getElementById('cmName').value.trim();
             const office_id = document.getElementById('cmOffice').value;
 
             if (!name) {
                 showToast('ケアマネージャー名を入力してください', 'error');
-                return false;
+                return;
             }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="btn__icon">⏳</span><span class="btn__text">登録中...</span>';
 
             try {
-                const response = await fetch(`${API_BASE}/care-managers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, office_id: office_id || null })
+                const newManager = await window.masterDataService.createCareManager({
+                    name,
+                    office_id: office_id || null
                 });
 
-                const data = await response.json();
-                if (response.ok) {
-                    showToast('ケアマネージャーを登録しました', 'success');
-                    return true;
-                } else {
-                    showToast(data.error || '登録に失敗しました', 'error');
-                    return false;
-                }
+                showToast('ケアマネージャーを登録しました', 'success');
+                closeModal();
+                await refreshSelects();
             } catch (error) {
-                showToast('登録処理中にエラーが発生しました', 'error');
-                return false;
+                console.error('Error:', error);
+                const message = error instanceof APIError
+                    ? error.getLocalizedMessage()
+                    : '登録処理中にエラーが発生しました';
+                showToast(message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '登録';
             }
-        }
-    });
+        });
+    }
 }
 
 // 居宅介護支援事業所登録モーダル
-function setupOfficeModal() {
-    setupModal('officeModal', {
-        onSave: async () => {
+function setupOfficeModal(isNested = false) {
+    const closeBtn = document.getElementById('closeOfficeModalBtn');
+    const cancelBtn = document.getElementById('cancelOfficeBtn');
+    const saveBtn = document.getElementById('saveOfficeBtn');
+    const form = document.getElementById('officeForm');
+
+    // モーダルを閉じる
+    const closeModal = () => {
+        window.modalManager.close('officeModal');
+        form.reset();
+    };
+
+    // イベントリスナーの重複を避ける
+    if (!closeBtn._listenerAdded) {
+        closeBtn.addEventListener('click', closeModal);
+        closeBtn._listenerAdded = true;
+    }
+    if (!cancelBtn._listenerAdded) {
+        cancelBtn.addEventListener('click', closeModal);
+        cancelBtn._listenerAdded = true;
+    }
+
+    // 保存処理
+    if (saveBtn && !saveBtn._listenerAdded) {
+        saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('officeName').value.trim();
             const address = document.getElementById('officeAddress').value.trim();
 
             if (!name) {
                 showToast('事業所名を入力してください', 'error');
-                return false;
+                return;
             }
+
+            if (!address) {
+                showToast('住所を入力してください', 'error');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="btn__icon">⏳</span><span class="btn__text">登録中...</span>';
 
             try {
-                const response = await fetch(`${API_BASE}/care-offices`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, address })
+                const newOffice = await window.masterDataService.createCareOffice({
+                    name,
+                    address
                 });
 
-                const data = await response.json();
-                if (response.ok) {
-                    showToast('居宅介護支援事業所を登録しました', 'success');
-                    return true;
-                } else {
-                    showToast(data.error || '登録に失敗しました', 'error');
-                    return false;
+                showToast('居宅介護支援事業所を登録しました', 'success');
+
+                // ネストモーダルの場合、事業所セレクトを更新
+                if (window.modalManager.getStackSize() > 1) {
+                    await updateOfficeSelectForCM(newOffice.office_id);
                 }
+
+                window.modalManager.close('officeModal', newOffice);
+                await refreshSelects();
             } catch (error) {
-                showToast('登録処理中にエラーが発生しました', 'error');
-                return false;
+                console.error('Error:', error);
+                const message = error instanceof APIError
+                    ? error.getLocalizedMessage()
+                    : '登録処理中にエラーが発生しました';
+                showToast(message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '登録';
             }
-        }
-    });
+        });
+        saveBtn._listenerAdded = true;
+    }
 }
 
 // 訪問看護ステーション登録モーダル
 function setupVNSModal() {
-    setupModal('vnsModal', {
-        onSave: async () => {
+    const closeBtn = document.getElementById('closeVnsModalBtn');
+    const cancelBtn = document.getElementById('cancelVnsBtn');
+    const saveBtn = document.getElementById('saveVnsBtn');
+    const form = document.getElementById('vnsForm');
+
+    // モーダルを閉じる
+    const closeModal = () => {
+        window.modalManager.close('vnsModal');
+        form.reset();
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // 保存処理
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('vnsName').value.trim();
             const address = document.getElementById('vnsAddress').value.trim();
             const tel = document.getElementById('vnsTel').value.trim();
 
             if (!name) {
                 showToast('ステーション名を入力してください', 'error');
-                return false;
+                return;
             }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="btn__icon">⏳</span><span class="btn__text">登録中...</span>';
 
             try {
-                const response = await fetch(`${API_BASE}/vns`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, address, tel })
+                const newStation = await window.masterDataService.createVisitingNurseStation({
+                    name,
+                    address,
+                    tel
                 });
 
-                const data = await response.json();
-                if (response.ok) {
-                    showToast('訪問看護ステーションを登録しました', 'success');
-                    return true;
-                } else {
-                    showToast(data.error || '登録に失敗しました', 'error');
-                    return false;
-                }
+                showToast('訪問看護ステーションを登録しました', 'success');
+                closeModal();
+                await refreshSelects();
             } catch (error) {
-                showToast('登録処理中にエラーが発生しました', 'error');
-                return false;
+                console.error('Error:', error);
+                const message = error instanceof APIError
+                    ? error.getLocalizedMessage()
+                    : '登録処理中にエラーが発生しました';
+                showToast(message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '登録';
             }
-        }
-    });
+        });
+    }
 }
 
 // トースト通知を表示

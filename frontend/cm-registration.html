@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ケアマネージャー新規登録 - アゲアゲくん</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👥</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- サイドバー -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <h2 class="sidebar__title">メニュー</h2>
+            <button class="sidebar__close" id="sidebarClose">×</button>
+        </div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">
+                <span class="sidebar__icon">📤</span>
+                <span class="sidebar__text">自動アップロード</span>
+            </a>
+            <a href="ai_report.html" class="sidebar__link">
+                <span class="sidebar__icon">🤖</span>
+                <span class="sidebar__text">AI報告書作成</span>
+            </a>
+            <a href="admin.html" class="sidebar__link sidebar__link--active">
+                <span class="sidebar__icon">⚙️</span>
+                <span class="sidebar__text">管理画面</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <button class="hamburger" id="hamburgerBtn">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
+            <h1 class="header__title">👥 ケアマネージャー新規登録</h1>
+            <div class="header__subtitle">新しいケアマネージャー情報を登録します</div>
+        </header>
+
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+            <a href="admin.html" class="breadcrumb__link">管理画面</a>
+            <span class="breadcrumb__separator">›</span>
+            <span class="breadcrumb__current">ケアマネージャー新規登録</span>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main class="registration-content">
+            <form id="masterForm" class="registration-form">
+                <!-- 基本情報セクション -->
+                <section class="form-section">
+                    <h2 class="form-section__title">
+                        <i class="fas fa-user-nurse"></i> ケアマネージャー情報
+                    </h2>
+                    <div class="form-grid" id="formFields">
+                        <!-- 動的に生成されるフィールド -->
+                    </div>
+                </section>
+
+                <!-- フォームアクション -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--large" id="submitBtn">
+                        <span class="btn__icon">💾</span>
+                        <span class="btn__text">登録</span>
+                    </button>
+                    <button type="button" class="btn btn--secondary btn--large" onclick="location.href='admin.html'">
+                        <span class="btn__icon">🔙</span>
+                        <span class="btn__text">管理画面に戻る</span>
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <!-- トースト通知エリア -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/modalManager.js"></script>
+    <script src="js/masterDataService.js"></script>
+    <script src="js/master-registration.js"></script>
+    <script src="js/configs/cm-config.js"></script>
+    <script>
+        // ページ初期化
+        new MasterRegistrationPage(CMConfig);
+    </script>
+</body>
+</html>

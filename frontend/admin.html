@@ -74,7 +74,7 @@
                     <p class="admin-card__description">
                         訪問看護ステーションを登録します
                     </p>
-                    <button class="btn btn--secondary btn--full" id="vnsRegisterBtn">
+                    <button class="btn btn--primary btn--full" onclick="location.href='vns-registration.html'">
                         <span class="btn__icon">🏥</span>
                         <span class="btn__text">登録画面へ</span>
                     </button>
@@ -89,7 +89,7 @@
                     <p class="admin-card__description">
                         居宅介護支援事業所を登録します
                     </p>
-                    <button class="btn btn--secondary btn--full" id="officeRegisterBtn">
+                    <button class="btn btn--primary btn--full" onclick="location.href='office-registration.html'">
                         <span class="btn__icon">🏢</span>
                         <span class="btn__text">登録画面へ</span>
                     </button>
@@ -104,7 +104,7 @@
                     <p class="admin-card__description">
                         ケアマネージャーを登録します
                     </p>
-                    <button class="btn btn--secondary btn--full" id="cmRegisterBtn">
+                    <button class="btn btn--primary btn--full" onclick="location.href='cm-registration.html'">
                         <span class="btn__icon">👥</span>
                         <span class="btn__text">登録画面へ</span>
                     </button>
@@ -135,99 +135,6 @@
             </section>
         </main>
 
-        <!-- 訪問看護ステーション登録モーダル -->
-        <div class="modal" id="vnsModal" style="display: none;">
-            <div class="modal__overlay"></div>
-            <div class="modal__content">
-                <div class="modal__header">
-                    <h2 class="modal__title">訪問看護ステーション新規登録</h2>
-                    <button class="modal__close" id="closeVnsModalBtn">✕</button>
-                </div>
-                <div class="modal__body">
-                    <form id="vnsForm" class="admin-form">
-                        <div class="form-group">
-                            <label for="vnsName" class="form-label">
-                                ステーション名 <span class="required">*</span>
-                            </label>
-                            <input type="text" id="vnsName" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="vnsAddress" class="form-label">住所</label>
-                            <textarea id="vnsAddress" class="form-textarea" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="vnsTel" class="form-label">電話番号</label>
-                            <input type="tel" id="vnsTel" class="form-input">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal__footer">
-                    <button class="btn btn--primary" id="saveVnsBtn">登録</button>
-                    <button class="btn btn--secondary" id="cancelVnsBtn">キャンセル</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 居宅介護支援事業所登録モーダル -->
-        <div class="modal" id="officeModal" style="display: none;">
-            <div class="modal__overlay"></div>
-            <div class="modal__content">
-                <div class="modal__header">
-                    <h2 class="modal__title">居宅介護支援事業所新規登録</h2>
-                    <button class="modal__close" id="closeOfficeModalBtn">✕</button>
-                </div>
-                <div class="modal__body">
-                    <form id="officeForm" class="admin-form">
-                        <div class="form-group">
-                            <label for="officeName" class="form-label">
-                                事業所名 <span class="required">*</span>
-                            </label>
-                            <input type="text" id="officeName" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="officeAddress" class="form-label">住所</label>
-                            <textarea id="officeAddress" class="form-textarea" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal__footer">
-                    <button class="btn btn--primary" id="saveOfficeBtn">登録</button>
-                    <button class="btn btn--secondary" id="cancelOfficeBtn">キャンセル</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ケアマネージャー登録モーダル -->
-        <div class="modal" id="cmModal" style="display: none;">
-            <div class="modal__overlay"></div>
-            <div class="modal__content">
-                <div class="modal__header">
-                    <h2 class="modal__title">ケアマネージャー新規登録</h2>
-                    <button class="modal__close" id="closeCmModalBtn">✕</button>
-                </div>
-                <div class="modal__body">
-                    <form id="cmForm" class="admin-form">
-                        <div class="form-group">
-                            <label for="cmName" class="form-label">
-                                ケアマネージャー名 <span class="required">*</span>
-                            </label>
-                            <input type="text" id="cmName" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cmOffice" class="form-label">所属事業所</label>
-                            <select id="cmOffice" class="form-select">
-                                <option value="">選択してください</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal__footer">
-                    <button class="btn btn--primary" id="saveCmBtn">登録</button>
-                    <button class="btn btn--secondary" id="cancelCmBtn">キャンセル</button>
-                </div>
-            </div>
-        </div>
-
         <!-- トースト通知エリア -->
         <div class="toast-container" id="toastContainer"></div>
     </div>
@@ -235,6 +142,8 @@
     <!-- JavaScript -->
     <script src="js/navigation.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/modalManager.js"></script>
+    <script src="js/masterDataService.js"></script>
     <script src="js/admin.js"></script>
 </body>
 </html>
