@@ -226,6 +226,7 @@
 
 .input-with-button .form-select {
     flex: 1;
+    min-width: 300px; /* 最小幅を設定してドロップダウンを揃える */
 }
 
 /* フォームアクション */
@@ -415,4 +416,30 @@
 .form-input--success {
     border-color: var(--color-success);
     background-color: rgba(72, 187, 120, 0.05);
+}
+
+/* 生年月日セレクトボックス */
+.birthdate-selects {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.birthdate-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.birthdate-select:first-child {
+    flex: 2; /* 年セレクトを大きく */
+}
+
+@media (max-width: 768px) {
+    .birthdate-selects {
+        flex-direction: column;
+    }
+
+    .birthdate-select {
+        width: 100%;
+    }
 }

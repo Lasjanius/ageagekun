@@ -77,8 +77,19 @@
                             <input type="text" id="patientName" name="patientName" class="form-input" required>
                         </div>
                         <div class="form-group">
-                            <label for="birthdate" class="form-label">生年月日</label>
-                            <input type="date" id="birthdate" name="birthdate" class="form-input">
+                            <label class="form-label">生年月日</label>
+                            <div class="birthdate-selects">
+                                <select id="birthYear" class="form-select birthdate-select">
+                                    <option value="">年</option>
+                                </select>
+                                <select id="birthMonth" class="form-select birthdate-select">
+                                    <option value="">月</option>
+                                </select>
+                                <select id="birthDay" class="form-select birthdate-select">
+                                    <option value="">日</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="birthdate" name="birthdate">
                         </div>
                         <div class="form-group form-group--full">
                             <label for="address" class="form-label">住所</label>
@@ -93,21 +104,6 @@
                         <i class="fas fa-hands-helping"></i> ケア管理情報
                     </h2>
 
-                    <!-- ケアマネージャー -->
-                    <div class="form-group">
-                        <label for="cmSelect" class="form-label">ケアマネージャー</label>
-                        <div class="input-with-button">
-                            <select id="cmSelect" name="cm_id" class="form-select">
-                                <option value="">選択してください</option>
-                            </select>
-                            <button type="button" class="btn btn--outline btn--small" id="newCmBtn">
-                                <span class="btn__icon">➕</span>
-                                <span class="btn__text">ケアマネージャー新規登録</span>
-                            </button>
-                        </div>
-                        <input type="hidden" id="cmname" name="cmname">
-                    </div>
-
                     <!-- 居宅介護支援事業所 -->
                     <div class="form-group">
                         <label for="officeSelect" class="form-label">居宅介護支援事業所</label>
@@ -121,6 +117,21 @@
                             </button>
                         </div>
                         <input type="hidden" id="homecareoffice" name="homecareoffice">
+                    </div>
+
+                    <!-- ケアマネージャー -->
+                    <div class="form-group">
+                        <label for="cmSelect" class="form-label">ケアマネージャー</label>
+                        <div class="input-with-button">
+                            <select id="cmSelect" name="cm_id" class="form-select" disabled>
+                                <option value="">まず居宅介護支援事業所を選択してください</option>
+                            </select>
+                            <button type="button" class="btn btn--outline btn--small" id="newCmBtn">
+                                <span class="btn__icon">➕</span>
+                                <span class="btn__text">ケアマネージャー新規登録</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="cmname" name="cmname">
                     </div>
 
                     <!-- 訪問看護ステーション -->

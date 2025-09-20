@@ -1,32 +1,140 @@
-- patients
-    - patientID(key)
-    - patientName
-    - address
-    - visitingNurse
-    - homecareOffice
-    - CMName
-    - birthdate
-    - created_at
+# Database Schema for ageagekun (あげあげくん)
 
-- Documents
-    - fileID(key)
-    - fileName
-    - patientID
-    - Category
-    - FileType
-    - created_at
-    - uploaded_at
-    - isUploaded
-    - pass
+Database: PostgreSQL 17
+Database Name: ageagekun
+Host: localhost:5432
+User: postgres
 
-- rpa_queue
-    - id(key)
-    - task_type
-    - file_id(FK to Documents)
-    - payload(JSON)
-    - status(pending/processing/done/failed)
-    - created_at
-    - started_at
-    - finished_at
-    - error_message
-    - retry_count
+## Master Tables
+
+### care_offices (居宅介護支援事業所)
+- office_id (SERIAL PRIMARY KEY)
+- name (VARCHAR(255) NOT NULL)
+- address (TEXT)
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+
+### care_managers (ケアマネージャー)
+- cm_id (SERIAL PRIMARY KEY)
+- name (VARCHAR(255) NOT NULL)
+- office_id (INTEGER, FK to care_offices.office_id ON DELETE SET NULL)
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+
+### visiting_nurse_stations (訪問看護ステーション)
+- vns_id (SERIAL PRIMARY KEY)
+- name (VARCHAR(255) NOT NULL)
+- address (TEXT)
+- tel (VARCHAR(20))
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+
+## Main Tables
+
+### patients (患者情報)
+- patientID (SERIAL PRIMARY KEY)
+- patientName (VARCHAR(255) NOT NULL)
+- address (TEXT)
+- birthdate (DATE)
+- cm_id (INTEGER, FK to care_managers.cm_id ON DELETE SET NULL)
+- vns_id (INTEGER, FK to visiting_nurse_stations.vns_id ON DELETE SET NULL)
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- visitingNurse (VARCHAR(255)) - Legacy column
+- homecareOffice (VARCHAR(255)) - Legacy column
+- CMName (VARCHAR(255)) - Legacy column
+
+### Documents (文書管理)
+- fileID (SERIAL PRIMARY KEY)
+- fileName (VARCHAR(255) NOT NULL)
+- patientID (INTEGER, FK to patients.patientID)
+- Category (VARCHAR(100))
+- FileType (VARCHAR(50))
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- uploaded_at (TIMESTAMP)
+- isUploaded (BOOLEAN DEFAULT FALSE)
+- pass (TEXT) - File path
+- base_dir (TEXT DEFAULT 'C:\Users\hyosh\Desktop\allright\ageagekun') - Base directory
+
+### rpa_queue (RPA処理キュー)
+- id (SERIAL PRIMARY KEY)
+- task_type (VARCHAR(50) DEFAULT 'document_upload')
+- file_id (INTEGER, FK to Documents.fileID)
+- patient_id (INTEGER, FK to patients.patientID)
+- payload (JSONB)
+- status (VARCHAR(20) DEFAULT 'pending') - Values: pending, processing, done, failed
+- created_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+- started_at (TIMESTAMP)
+- finished_at (TIMESTAMP)
+- error_message (TEXT)
+- retry_count (INTEGER DEFAULT 0)
+- updated_at (TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+
+## Views
+
+### patient_full_view (患者情報統合ビュー)
+Joins patients with care_managers, care_offices, and visiting_nurse_stations
+to provide complete patient information with all related master data.
+
+### cm_workload_view (ケアマネージャー業務量)
+Shows care manager workload by counting assigned patients.
+
+### vns_workload_view (訪問看護ステーション業務量)
+Shows visiting nurse station workload by counting assigned patients.
+
+### office_statistics_view (事業所統計)
+Provides statistics for care offices including number of care managers
+and total patients managed.
+
+## Indexes
+- idx_patients_cm_id ON patients(cm_id)
+- idx_patients_vns_id ON patients(vns_id)
+- idx_care_managers_office_id ON care_managers(office_id)
+- idx_documents_patientid ON Documents(patientID)
+- idx_documents_isuploaded ON Documents(isUploaded)
+- idx_rpa_queue_status ON rpa_queue(status)
+- idx_rpa_queue_file_id ON rpa_queue(file_id)
+
+## Triggers
+
+### update_rpa_queue_trigger
+Fires AFTER UPDATE on rpa_queue when status changes to 'done'
+- Updates Documents.isUploaded = TRUE
+- Sets Documents.uploaded_at = CURRENT_TIMESTAMP
+- Updates file paths (pass, base_dir) to include '\uploaded'
+- Sends pg_notify to 'upload_status' channel
+
+### update_updated_at()
+Function that updates the updated_at column to CURRENT_TIMESTAMP
+Applied to:
+- care_offices (BEFORE UPDATE)
+- care_managers (BEFORE UPDATE)
+- visiting_nurse_stations (BEFORE UPDATE)
+- rpa_queue (BEFORE UPDATE)
+
+## Relationships
+1. care_managers → care_offices (Many-to-One)
+   - A care manager belongs to one office
+   - An office can have multiple care managers
+
+2. patients → care_managers (Many-to-One)
+   - A patient is assigned to one care manager
+   - A care manager can manage multiple patients
+
+3. patients → visiting_nurse_stations (Many-to-One)
+   - A patient is assigned to one visiting nurse station
+   - A station can serve multiple patients
+
+4. Documents → patients (Many-to-One)
+   - A document belongs to one patient
+   - A patient can have multiple documents
+
+5. rpa_queue → Documents (Many-to-One)
+   - A queue entry references one document
+   - A document can have multiple queue entries
+
+## Notes
+- The database uses a normalized structure with proper foreign key constraints
+- Legacy columns (CMName, homecareOffice, visitingNurse) are maintained for backward compatibility
+- The trigger system automatically handles document upload status and file movement
+- All timestamps use TIMESTAMP WITHOUT TIME ZONE
+- Character encoding: UTF8
