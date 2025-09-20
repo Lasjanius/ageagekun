@@ -5,6 +5,7 @@ const queueController = require('../controllers/queueController');
 // キュー関連のルート
 router.post('/create-batch', queueController.createBatchQueue);
 router.get('/overview', queueController.getQueueOverview);
+router.get('/pending', queueController.getPendingQueues);
 router.get('/:id/status', queueController.getQueueStatus);
 
 // PAD用のステータス更新エンドポイント

@@ -88,6 +88,7 @@
 
 .karte-paste-actions {
     text-align: center;
+    margin-bottom: 20px;
 }
 
 .btn-generate-from-paste {
@@ -135,6 +136,72 @@
     max-width: 400px;
 }
 
+/* フィルターコントロール（1行レイアウト） */
+.filter-controls {
+    margin-bottom: 16px;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap; /* 1行強制 */
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.filter-group label {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+
+.filter-select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    min-width: 120px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.filter-select:hover {
+    border-color: #667eea;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto; /* 右寄せ */
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+
+.filter-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 /* 患者確認画面スタイル */
 .karte-step2-confirmation {
     max-width: 1000px;
@@ -145,15 +212,23 @@
     display: flex;
     gap: 30px;
     margin-top: 20px;
+    align-items: stretch;
 }
 
 .confirm-left-column {
     flex: 1;
     max-width: 400px;
+    display: flex;
+    flex-direction: column;
 }
 
 .confirm-right-column {
     flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 15px;
+    align-content: stretch;
 }
 
 .patient-main-confirm {
@@ -162,6 +237,10 @@
     border-radius: 12px;
     padding: 25px;
     text-align: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .patient-id-display {
@@ -246,7 +325,16 @@
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 訪問看護ステーションセクションの非表示対応 */
+#vnsSection[style*="display: none"] {
+    visibility: hidden !important;
+    display: flex !important;
 }
 
 .detail-section h4 {
@@ -512,16 +600,14 @@
 }
 
 .patient-card {
-    padding: 8px 12px;
+    padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: 4px;
     background: white;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: block; /* flex から block に変更 */
 }
 
 .patient-card:hover {
@@ -536,24 +622,6 @@
     background: linear-gradient(135deg, #f3f4ff 0%, #e8eaff 100%);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     position: relative;
-}
-
-.patient-card.selected::after {
-    content: '✓';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    background: #667eea;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
 }
 
 .patient-card-header {
@@ -571,6 +639,12 @@
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
+    align-self: center;
+    min-width: 80px;
+    max-width: 80px;
+    display: inline-flex;
+    justify-content: center;
+    text-align: center;
 }
 
 .patient-name {
@@ -578,7 +652,12 @@
     font-size: 14px;
     font-weight: 600;
     color: #333;
-    flex: 1;
+    align-self: center;
+    min-width: 120px;
+    max-width: 120px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .patient-info {
@@ -607,9 +686,11 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 0; /* 1行レイアウトのため下マージンなし */
-    flex-wrap: wrap;
-    min-height: 32px; /* 最小高さを設定 */
+    margin-bottom: 0;
+    flex-wrap: nowrap; /* wrap から nowrap に変更 */
+    min-height: 32px;
+    position: relative; /* トグルボタンの絶対配置の基準 */
+    padding-right: 48px; /* トグルボタン用スペース確保 */
 }
 
 .patient-card-main {
@@ -618,6 +699,7 @@
     gap: 8px;
     flex: 1;
     min-height: 32px;
+    flex-wrap: nowrap; /* 折り返しを禁止して1行に */
 }
 
 /* コンパクトトグルボタン */
@@ -632,8 +714,13 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    margin-left: auto; /* 右側に配置 */
-    flex-shrink: 0; /* サイズ変更を防ぐ */
+    /* 絶対配置で固定位置に */
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-shrink: 0;
+    z-index: 10; /* クリック可能性を確保 */
 }
 
 .toggle-button:hover {
@@ -657,22 +744,36 @@
 }
 
 /* AI報告書情報スタイル */
-.ai-date, .ai-title {
+.ai-date {
     font-size: 12px;
     color: #666;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     margin-left: 8px;
+    align-self: center;
+    min-width: 140px;
+    white-space: nowrap;
+}
+
+.ai-title {
+    font-size: 12px;
+    color: #444;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    align-self: center;
+    flex: 1; /* 残りスペースを使用 */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .ai-date-icon, .ai-title-icon {
     font-size: 10px;
-}
-
-.ai-title {
-    font-weight: 500;
-    color: #444;
+    flex-shrink: 0; /* アイコンサイズ固定 */
 }
 
 .no-ai-report {
@@ -680,6 +781,8 @@
     color: #999;
     font-style: italic;
     margin-left: 8px;
+    align-self: center;
+    flex: 1; /* 残りスペースを使用 */
 }
 
 .ai-report-badge {
@@ -693,20 +796,19 @@
     margin-left: 8px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    align-self: center;
+    min-width: 80px;
+    text-align: center;
 }
 
 /* 患者カード詳細エリア */
 .patient-card-detail {
     margin-top: 12px;
-    padding-top: 12px;
+    padding: 12px;
     border-top: 1px solid #f0f0f0;
     background: #fafbff;
-    border-radius: 0 0 6px 6px;
-    margin-left: -12px;
-    margin-right: -12px;
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-bottom: 12px;
+    border-radius: 6px;
 }
 
 .detail-content {
@@ -1189,5 +1291,244 @@
     /* モバイルで右カラムのsticky位置を解除 */
     .right-column {
         position: static !important;
+    }
+}
+
+/* 患者選択モーダルスタイル */
+.patient-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.patient-modal-backdrop.show {
+    opacity: 1;
+}
+
+.patient-modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.patient-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.patient-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.patient-modal-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.patient-search-filter {
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.modal-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.modal-search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.patient-select-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.patient-dropdown {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 350px;
+}
+
+.patient-dropdown option {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.patient-dropdown option:hover {
+    background-color: #f5f5f5;
+}
+
+.patient-dropdown option:checked {
+    background-color: #e3e8ff;
+    font-weight: 500;
+}
+
+.patient-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+    background: #f9f9f9;
+    flex-shrink: 0;
+}
+
+.btn-modal-confirm,
+.btn-modal-cancel {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-modal-confirm {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-modal-confirm:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-modal-confirm:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-modal-cancel {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-modal-cancel:hover {
+    background: #e0e0e0;
+}
+
+.btn-icon {
+    font-size: 18px;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .patient-modal-container {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .patient-modal-header {
+        padding: 16px;
+    }
+
+    .patient-modal-content {
+        padding: 16px;
+    }
+
+    .patient-modal-actions {
+        padding: 16px;
+    }
+
+    .btn-modal-confirm,
+    .btn-modal-cancel {
+        flex: 1;
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* Step2のグリッドレイアウトをモバイルで解除 */
+    .confirm-right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .confirmation-columns {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .confirm-left-column {
+        max-width: 100%;
     }
 }

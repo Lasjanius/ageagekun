@@ -14,6 +14,12 @@ const App = {
         wsReconnectAttempts: 0,
         wsMaxReconnectAttempts: 5,
         elapsedTimeInterval: null, // 経過時間更新用のインターバル
+        queueMonitor: {
+            isVisible: false,
+            data: [],
+            autoRefreshInterval: null,
+            lastUpdated: null
+        },
     },
     
     // 初期化
@@ -61,7 +67,42 @@ const App = {
         UI.elements.refreshBtn.addEventListener('click', () => {
             this.loadData();
         });
-        
+
+        // キューモニターボタン
+        const queueMonitorBtn = document.getElementById('queueMonitorBtn');
+        if (queueMonitorBtn) {
+            queueMonitorBtn.addEventListener('click', () => {
+                this.showQueueMonitor();
+            });
+        }
+
+        // キューモニターの閉じるボタン
+        const closeQueueMonitorBtn = document.getElementById('closeQueueMonitorBtn');
+        if (closeQueueMonitorBtn) {
+            closeQueueMonitorBtn.addEventListener('click', () => {
+                this.hideQueueMonitor();
+            });
+        }
+
+        // キューモニターの更新ボタン
+        const refreshQueueMonitorBtn = document.getElementById('refreshQueueMonitorBtn');
+        if (refreshQueueMonitorBtn) {
+            refreshQueueMonitorBtn.addEventListener('click', () => {
+                this.refreshQueueMonitor();
+            });
+        }
+
+        // キューモニターモーダルのオーバーレイクリックで閉じる
+        const queueMonitorModal = document.getElementById('queueMonitorModal');
+        if (queueMonitorModal) {
+            const overlay = queueMonitorModal.querySelector('.modal__overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    this.hideQueueMonitor();
+                });
+            }
+        }
+
         // 全選択チェックボックス
         UI.elements.selectAllCheckbox.addEventListener('change', (e) => {
             UI.toggleSelectAll(e.target.checked);
@@ -97,11 +138,22 @@ const App = {
 
         // 確認モーダル
         UI.elements.confirmYesBtn.addEventListener('click', () => {
-            this.startUpload();
+            const modal = UI.elements.confirmModal;
+            const action = modal.dataset.action;
+
+            if (action === 'delete') {
+                const fileId = modal.dataset.fileId;
+                this.handleDeleteDocument(fileId);
+            } else {
+                this.startUpload();
+            }
         });
-        
+
         UI.elements.confirmNoBtn.addEventListener('click', () => {
             UI.hideConfirmModal();
+            // データセット属性をクリア
+            delete UI.elements.confirmModal.dataset.action;
+            delete UI.elements.confirmModal.dataset.fileId;
         });
         
         // アップロードモーダル
@@ -130,6 +182,16 @@ const App = {
                     UI.hideCompletionModal();
                 }
             });
+        });
+
+        // 削除ボタンのイベント委譲
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.document-item__delete')) {
+                const button = e.target.closest('.document-item__delete');
+                const fileId = button.dataset.fileId;
+                const fileName = button.dataset.fileName;
+                UI.showDeleteConfirmModal(fileId, fileName);
+            }
         });
     },
     
@@ -381,6 +443,16 @@ const App = {
                             status: message.data.status
                         });
                         this.handleQueueUpdate(message.data);
+                    } else if (message.type === 'document_deleted') {
+                        // ドキュメント削除通知
+                        console.log('🗑️ Document deleted:', {
+                            file_id: message.data.file_id,
+                            file_name: message.data.file_name
+                        });
+                        // 他のクライアントでも表示を更新
+                        this.state.files = this.state.files.filter(f => f.file_id !== message.data.file_id);
+                        this.filterFiles();
+                        UI.showToast(`ファイル「${message.data.file_name}」が削除されました`, 'info');
                     } else if (message.type === 'connection') {
                         console.log('🤝 Server acknowledgement:', message.message);
                     }
@@ -473,6 +545,14 @@ const App = {
                 file.isuploaded = true;
                 this.filterFiles();
             }
+        }
+
+        // キューモニターが表示されている場合は更新
+        if (this.state.queueMonitor.isVisible) {
+            // 少し遅延を入れてから更新（DBの更新が完了するのを待つ）
+            setTimeout(() => {
+                this.refreshQueueMonitor();
+            }, 500);
         }
     },
     
@@ -586,6 +666,117 @@ const App = {
     async pollQueueStatus() {
         // WebSocketまたはポーリングで実装
         // 現在は仮実装
+    },
+
+    // キューモニターを表示
+    async showQueueMonitor() {
+        console.log('📋 Opening queue monitor...');
+        this.state.queueMonitor.isVisible = true;
+        UI.showQueueMonitor();
+
+        // データを取得して表示
+        await this.refreshQueueMonitor();
+
+        // 自動更新を開始（5分ごと）
+        this.startQueueMonitorAutoRefresh();
+    },
+
+    // キューモニターを非表示
+    hideQueueMonitor() {
+        console.log('📋 Closing queue monitor...');
+        this.state.queueMonitor.isVisible = false;
+        UI.hideQueueMonitor();
+
+        // 自動更新を停止
+        this.stopQueueMonitorAutoRefresh();
+    },
+
+    // キューモニターのデータを更新
+    async refreshQueueMonitor() {
+        try {
+            console.log('🔄 Refreshing queue monitor data...');
+            const queues = await API.getPendingQueues();
+
+            this.state.queueMonitor.data = queues;
+            this.state.queueMonitor.lastUpdated = new Date();
+
+            // UIを更新
+            UI.renderQueueTable(queues);
+
+            console.log(`✅ Queue monitor updated: ${queues.length} items`);
+        } catch (error) {
+            console.error('Failed to refresh queue monitor:', error);
+            UI.showToast('キューデータの取得に失敗しました', 'error');
+        }
+    },
+
+    // 自動更新を開始
+    startQueueMonitorAutoRefresh() {
+        // 既存のインターバルをクリア
+        this.stopQueueMonitorAutoRefresh();
+
+        // 5分ごとに更新
+        this.state.queueMonitor.autoRefreshInterval = setInterval(() => {
+            if (this.state.queueMonitor.isVisible) {
+                this.refreshQueueMonitor();
+            }
+        }, 300000); // 5分 = 300,000ms
+    },
+
+    // 自動更新を停止
+    stopQueueMonitorAutoRefresh() {
+        if (this.state.queueMonitor.autoRefreshInterval) {
+            clearInterval(this.state.queueMonitor.autoRefreshInterval);
+            this.state.queueMonitor.autoRefreshInterval = null;
+        }
+    },
+
+    // WebSocketメッセージ受信時にキューモニターも更新
+    handleQueueWebSocketUpdate(message) {
+        // 既存の処理に加えて、キューモニターが表示されている場合は更新
+        if (this.state.queueMonitor.isVisible && message.type === 'queue_update') {
+            // 少し遅延を入れてから更新（DBの更新が完了するのを待つ）
+            setTimeout(() => {
+                this.refreshQueueMonitor();
+            }, 500);
+        }
+    },
+
+    // ドキュメント削除処理
+    async handleDeleteDocument(fileId) {
+        try {
+            UI.hideConfirmModal();
+            UI.showToast('削除中...', 'info');
+
+            const response = await API.deleteDocument(fileId);
+
+            if (response.success) {
+                UI.showToast(`ファイル「${response.data.file_name}」を削除しました`, 'success');
+
+                // ファイルリストから削除
+                this.state.files = this.state.files.filter(f => f.file_id !== parseInt(fileId));
+                this.filterFiles();
+
+                // 統計情報を更新
+                const stats = await API.getStatistics();
+                UI.updateStatistics({
+                    pending_count: stats.pending_count,
+                    uploaded_count: stats.uploaded_count,
+                    total_count: stats.total_count,
+                    patient_count: stats.patient_count
+                });
+            } else {
+                UI.showToast('削除に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to delete document:', error);
+            const errorMessage = error.message || 'ドキュメントの削除に失敗しました';
+            UI.showToast(errorMessage, 'error');
+        } finally {
+            // データセット属性をクリア
+            delete UI.elements.confirmModal.dataset.action;
+            delete UI.elements.confirmModal.dataset.fileId;
+        }
     }
 };
 

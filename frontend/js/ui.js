@@ -265,12 +265,21 @@ const UI = {
                 <div class="document-item__date">
                     ${new Date(file.created_at).toLocaleDateString('ja-JP')}
                 </div>
-                <a href="${filePath}" 
-                   class="document-item__link" 
-                   title="ファイルを開く"
-                   target="_blank">
-                   <i class="fa-solid fa-up-right-from-square"></i>
-                </a>
+                <div class="document-item__actions" style="display: flex; gap: 10px;">
+                    <a href="${filePath}"
+                       class="document-item__link"
+                       title="ファイルを開く"
+                       target="_blank">
+                       <i class="fa-solid fa-up-right-from-square"></i>
+                    </a>
+                    <button class="document-item__delete"
+                            data-file-id="${file.file_id}"
+                            data-file-name="${file.file_name.replace(/"/g, '&quot;')}"
+                            title="削除"
+                            style="background: #ff6b6b; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
     },
@@ -379,6 +388,18 @@ const UI = {
     // 確認モーダルを閉じる
     hideConfirmModal() {
         this.elements.confirmModal.style.display = 'none';
+    },
+
+    // 削除確認モーダルを表示
+    showDeleteConfirmModal(fileId, fileName) {
+        this.elements.confirmMessage.textContent =
+            `このファイルを削除してもよろしいですか？`;
+        this.elements.confirmList.innerHTML =
+            `<li style="color: #ff6b6b; font-weight: bold;">📄 ${fileName}</li>
+             <li style="color: #868e96; font-size: 0.9em;">※ この操作は取り消せません</li>`;
+        this.elements.confirmModal.style.display = 'block';
+        this.elements.confirmModal.dataset.action = 'delete';
+        this.elements.confirmModal.dataset.fileId = fileId;
     },
     
     // アップロードモーダルを表示
@@ -536,5 +557,111 @@ const UI = {
             }
         }
         return null;
+    },
+
+    // キューモニターモーダルを表示
+    showQueueMonitor() {
+        const modal = document.getElementById('queueMonitorModal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    },
+
+    // キューモニターモーダルを非表示
+    hideQueueMonitor() {
+        const modal = document.getElementById('queueMonitorModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    },
+
+    // キューモニターテーブルをレンダリング
+    renderQueueTable(queues) {
+        const tbody = document.getElementById('queueMonitorTableBody');
+        const emptyDiv = document.getElementById('queueMonitorEmpty');
+        const table = document.querySelector('.queue-monitor-table');
+
+        if (!tbody) return;
+
+        if (!queues || queues.length === 0) {
+            // データがない場合は空の状態を表示
+            if (table) table.style.display = 'none';
+            if (emptyDiv) emptyDiv.style.display = 'block';
+            tbody.innerHTML = '';
+            this.updateQueueMonitorStats(0);
+            return;
+        }
+
+        // データがある場合はテーブルを表示
+        if (table) table.style.display = 'table';
+        if (emptyDiv) emptyDiv.style.display = 'none';
+
+        // テーブル行を生成
+        const rows = queues.map(queue => {
+            const statusBadge = this.formatQueueStatus(queue.status);
+            const createdAt = this.formatDateTime(queue.created_at);
+            const updatedAt = this.formatDateTime(queue.updated_at);
+            const errorMsg = queue.error_message ?
+                `<span class="queue-error-message" title="${queue.error_message}">${queue.error_message}</span>` :
+                '-';
+
+            return `
+                <tr>
+                    <td>${queue.id}</td>
+                    <td>${queue.file_name || '-'}</td>
+                    <td>${queue.patient_id || '-'}</td>
+                    <td>${queue.patient_name || '-'}</td>
+                    <td><span class="queue-category-badge">${queue.category || '-'}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${errorMsg}</td>
+                    <td>${createdAt}</td>
+                    <td>${updatedAt}</td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rows;
+        this.updateQueueMonitorStats(queues.length);
+    },
+
+    // ステータスのフォーマット（バッジスタイル）
+    formatQueueStatus(status) {
+        const statusInfo = this.getStatusInfo(status);
+        return `
+            <span class="queue-status-badge queue-status-badge--${status}">
+                ${statusInfo.icon} ${statusInfo.text}
+            </span>
+        `;
+    },
+
+    // 日時のフォーマット
+    formatDateTime(dateString) {
+        if (!dateString) return '-';
+
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+
+        return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    },
+
+    // キューモニターの統計情報を更新
+    updateQueueMonitorStats(count) {
+        const countElement = document.getElementById('queueMonitorCount');
+        const lastUpdatedElement = document.getElementById('queueMonitorLastUpdated');
+
+        if (countElement) {
+            countElement.textContent = count;
+        }
+
+        if (lastUpdatedElement) {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            lastUpdatedElement.textContent = timeStr;
+        }
     }
 };

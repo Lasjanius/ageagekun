@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>患者新規登録 - アゲアゲくん</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👤</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- サイドバー -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <h2 class="sidebar__title">メニュー</h2>
+            <button class="sidebar__close" id="sidebarClose">×</button>
+        </div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">
+                <span class="sidebar__icon">📤</span>
+                <span class="sidebar__text">自動アップロード</span>
+            </a>
+            <a href="ai_report.html" class="sidebar__link">
+                <span class="sidebar__icon">🤖</span>
+                <span class="sidebar__text">AI報告書作成</span>
+            </a>
+            <a href="admin.html" class="sidebar__link sidebar__link--active">
+                <span class="sidebar__icon">⚙️</span>
+                <span class="sidebar__text">管理画面</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <button class="hamburger" id="hamburgerBtn">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
+            <h1 class="header__title">👤 患者新規登録</h1>
+            <div class="header__subtitle">新規患者情報の登録</div>
+        </header>
+
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+            <a href="admin.html" class="breadcrumb__link">管理画面</a>
+            <span class="breadcrumb__separator">›</span>
+            <span class="breadcrumb__current">患者新規登録</span>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main class="registration-content">
+            <form id="patientRegistrationForm" class="registration-form">
+                <!-- 基本情報セクション -->
+                <section class="form-section">
+                    <h2 class="form-section__title">
+                        <i class="fas fa-user"></i> 基本情報
+                    </h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="patientID" class="form-label">
+                                患者ID <span class="required">*</span>
+                            </label>
+                            <input type="text" id="patientID" name="patientID" class="form-input" required>
+                            <span class="form-hint">8桁の数字を入力してください</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="patientName" class="form-label">
+                                患者名 <span class="required">*</span>
+                            </label>
+                            <input type="text" id="patientName" name="patientName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="birthdate" class="form-label">生年月日</label>
+                            <input type="date" id="birthdate" name="birthdate" class="form-input">
+                        </div>
+                        <div class="form-group form-group--full">
+                            <label for="address" class="form-label">住所</label>
+                            <textarea id="address" name="address" class="form-textarea" rows="2"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ケア管理情報セクション -->
+                <section class="form-section">
+                    <h2 class="form-section__title">
+                        <i class="fas fa-hands-helping"></i> ケア管理情報
+                    </h2>
+
+                    <!-- ケアマネージャー -->
+                    <div class="form-group">
+                        <label for="cmSelect" class="form-label">ケアマネージャー</label>
+                        <div class="input-with-button">
+                            <select id="cmSelect" name="cm_id" class="form-select">
+                                <option value="">選択してください</option>
+                            </select>
+                            <button type="button" class="btn btn--outline btn--small" id="newCmBtn">
+                                <span class="btn__icon">➕</span>
+                                <span class="btn__text">ケアマネージャー新規登録</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="cmname" name="cmname">
+                    </div>
+
+                    <!-- 居宅介護支援事業所 -->
+                    <div class="form-group">
+                        <label for="officeSelect" class="form-label">居宅介護支援事業所</label>
+                        <div class="input-with-button">
+                            <select id="officeSelect" name="office_id" class="form-select">
+                                <option value="">選択してください</option>
+                            </select>
+                            <button type="button" class="btn btn--outline btn--small" id="newOfficeBtn">
+                                <span class="btn__icon">➕</span>
+                                <span class="btn__text">居宅新規登録</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="homecareoffice" name="homecareoffice">
+                    </div>
+
+                    <!-- 訪問看護ステーション -->
+                    <div class="form-group">
+                        <label for="vnsSelect" class="form-label">訪問看護ステーション</label>
+                        <div class="input-with-button">
+                            <select id="vnsSelect" name="vns_id" class="form-select">
+                                <option value="">選択してください</option>
+                            </select>
+                            <button type="button" class="btn btn--outline btn--small" id="newVnsBtn">
+                                <span class="btn__icon">➕</span>
+                                <span class="btn__text">訪看新規登録</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="visitingnurse" name="visitingnurse">
+                    </div>
+                </section>
+
+                <!-- フォームアクション -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn--primary btn--large" id="submitBtn">
+                        <span class="btn__icon">💾</span>
+                        <span class="btn__text">登録</span>
+                    </button>
+                    <button type="button" class="btn btn--secondary btn--large" onclick="location.href='admin.html'">
+                        <span class="btn__icon">❌</span>
+                        <span class="btn__text">キャンセル</span>
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <!-- ケアマネージャー登録モーダル -->
+        <div class="modal" id="cmModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h2 class="modal__title">ケアマネージャー新規登録</h2>
+                    <button class="modal__close" id="closeCmModalBtn">✕</button>
+                </div>
+                <div class="modal__body">
+                    <form id="cmForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="cmName" class="form-label">
+                                ケアマネージャー名 <span class="required">*</span>
+                            </label>
+                            <input type="text" id="cmName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cmOffice" class="form-label">所属事業所</label>
+                            <select id="cmOffice" class="form-select">
+                                <option value="">選択してください</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--primary" id="saveCmBtn">登録</button>
+                    <button class="btn btn--secondary" id="cancelCmBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 居宅介護支援事業所登録モーダル -->
+        <div class="modal" id="officeModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h2 class="modal__title">居宅介護支援事業所新規登録</h2>
+                    <button class="modal__close" id="closeOfficeModalBtn">✕</button>
+                </div>
+                <div class="modal__body">
+                    <form id="officeForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="officeName" class="form-label">
+                                事業所名 <span class="required">*</span>
+                            </label>
+                            <input type="text" id="officeName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="officeAddress" class="form-label">住所</label>
+                            <textarea id="officeAddress" class="form-textarea" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--primary" id="saveOfficeBtn">登録</button>
+                    <button class="btn btn--secondary" id="cancelOfficeBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訪問看護ステーション登録モーダル -->
+        <div class="modal" id="vnsModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content">
+                <div class="modal__header">
+                    <h2 class="modal__title">訪問看護ステーション新規登録</h2>
+                    <button class="modal__close" id="closeVnsModalBtn">✕</button>
+                </div>
+                <div class="modal__body">
+                    <form id="vnsForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="vnsName" class="form-label">
+                                ステーション名 <span class="required">*</span>
+                            </label>
+                            <input type="text" id="vnsName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="vnsAddress" class="form-label">住所</label>
+                            <textarea id="vnsAddress" class="form-textarea" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="vnsTel" class="form-label">電話番号</label>
+                            <input type="tel" id="vnsTel" class="form-input">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--primary" id="saveVnsBtn">登録</button>
+                    <button class="btn btn--secondary" id="cancelVnsBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 確認ダイアログ -->
+        <div class="modal" id="confirmModal" style="display: none;">
+            <div class="modal__overlay"></div>
+            <div class="modal__content modal__content--small">
+                <div class="modal__header">
+                    <h2 class="modal__title">登録確認</h2>
+                </div>
+                <div class="modal__body">
+                    <p id="confirmMessage">以下の内容で患者を登録します。よろしいですか？</p>
+                    <div class="confirm-details" id="confirmDetails"></div>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--primary" id="confirmYesBtn">登録</button>
+                    <button class="btn btn--secondary" id="confirmNoBtn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- トースト通知エリア -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/patient-registration.js"></script>
+</body>
+</html>

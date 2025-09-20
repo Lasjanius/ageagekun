@@ -84,7 +84,20 @@ const API = {
             };
         }
     },
-    
+
+    // ドキュメントを削除
+    async deleteDocument(fileId) {
+        try {
+            const response = await this.request(`/documents/${fileId}`, {
+                method: 'DELETE',
+            });
+            return response;
+        } catch (error) {
+            console.error(`Failed to delete document ${fileId}:`, error);
+            throw error;
+        }
+    },
+
     // 複数ファイルをキューに追加
     async createBatchQueue(files) {
         try {
@@ -181,6 +194,17 @@ const API = {
         } catch (error) {
             console.error('Failed to cancel all queues:', error);
             throw error;
+        }
+    },
+
+    // 保留中のキューアイテムを取得（status != 'done'）
+    async getPendingQueues() {
+        try {
+            const response = await this.request('/queue/pending');
+            return response.data || [];
+        } catch (error) {
+            console.error('Failed to fetch pending queues:', error);
+            return [];
         }
     },
 };

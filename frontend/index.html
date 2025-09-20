@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/ai_report.css">
+    <link rel="stylesheet" href="css/queue-monitor.css">
 </head>
 <body>
     <!-- サイドバー -->
@@ -63,6 +64,10 @@
                 <button class="btn btn--secondary btn--small" id="refreshBtn">
                     <span class="btn__icon">🔄</span>
                     <span class="btn__text">更新</span>
+                </button>
+                <button class="btn btn--secondary btn--small" id="queueMonitorBtn">
+                    <span class="btn__icon">🔍</span>
+                    <span class="btn__text">アップロード待ちのタスクを確認する</span>
                 </button>
             </div>
         </section>
@@ -203,6 +208,58 @@
                 <button class="btn btn--primary" id="completionOkBtn">
                     <span class="btn__text">OK</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- キューモニターモーダル -->
+    <div class="modal" id="queueMonitorModal" style="display: none;">
+        <div class="modal__overlay"></div>
+        <div class="modal__content" style="max-width: 90%; width: 1200px;">
+            <div class="modal__header">
+                <h2 class="modal__title">📋 アップロード待ちタスク一覧</h2>
+                <button class="modal__close" id="closeQueueMonitorBtn">✕</button>
+            </div>
+            <div class="modal__body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="queue-monitor-controls" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="queue-monitor-stats">
+                        <span>最終更新: <span id="queueMonitorLastUpdated">-</span></span>
+                        <span style="margin-left: 20px;">件数: <span id="queueMonitorCount">0</span>件</span>
+                    </div>
+                    <button class="btn btn--secondary btn--small" id="refreshQueueMonitorBtn">
+                        <span class="btn__icon">🔄</span>
+                        <span class="btn__text">更新</span>
+                    </button>
+                </div>
+                <div class="queue-monitor-table-container">
+                    <table class="queue-monitor-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f5f5f5;">
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">ファイル名</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">患者ID</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">患者名</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">カテゴリ</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">ステータス</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">エラー</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">作成日時</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">更新日時</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queueMonitorTableBody">
+                            <!-- 動的にキュー情報が表示されます -->
+                        </tbody>
+                    </table>
+                    <div class="queue-monitor-empty" id="queueMonitorEmpty" style="display: none; text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; color: #ccc;">📭</div>
+                        <div style="color: #666; margin-top: 10px;">アップロード待ちのタスクはありません</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <div style="font-size: 12px; color: #666;">
+                    ※ 5分ごとに自動更新されます
+                </div>
             </div>
         </div>
     </div>

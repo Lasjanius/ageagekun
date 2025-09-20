@@ -346,6 +346,64 @@ const cancelQueue = async (req, res) => {
   }
 };
 
+// 保留中のキューアイテムを取得（status != 'done'）
+const getPendingQueues = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        q.id,
+        q.file_id,
+        q.patient_id,
+        q.status,
+        q.payload,
+        q.error_message,
+        q.created_at,
+        q.updated_at,
+        d.fileName as file_name,
+        d.Category as category,
+        d.pass,
+        p.patientName as patient_name
+      FROM rpa_queue q
+      LEFT JOIN Documents d ON q.file_id = d.fileID
+      LEFT JOIN patients p ON q.patient_id = p.patientID
+      WHERE q.status != 'done'
+      ORDER BY q.created_at DESC
+    `;
+
+    const result = await db.query(query);
+
+    // payload内のデータも含めて整形
+    const formattedQueues = result.rows.map(row => ({
+      id: row.id,
+      file_id: row.file_id,
+      patient_id: row.patient_id,
+      status: row.status,
+      error_message: row.error_message,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      // payloadからの情報
+      file_name: row.payload?.file_name || row.file_name,
+      patient_name: row.payload?.patient_name || row.patient_name,
+      category: row.payload?.category || row.category,
+      pass: row.payload?.pass || row.pass,
+      base_dir: row.payload?.base_dir
+    }));
+
+    res.json({
+      success: true,
+      data: formattedQueues,
+      count: formattedQueues.length
+    });
+  } catch (error) {
+    console.error('Error fetching pending queues:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch pending queues',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   createBatchQueue,
   getQueueStatus,
@@ -353,5 +411,6 @@ module.exports = {
   updateToComplete,
   updateToFailed,
   getQueueOverview,
+  getPendingQueues,
   cancelQueue
 };

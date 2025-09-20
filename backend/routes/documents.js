@@ -8,5 +8,6 @@ router.get('/categories', documentsController.getCategories);
 router.get('/pending-uploads', documentsController.getPendingUploads);
 router.put('/:id/upload-status', documentsController.updateUploadStatus);
 router.get('/statistics', documentsController.getStatistics);
+router.delete('/:id', documentsController.deleteDocument);
 
 module.exports = router;

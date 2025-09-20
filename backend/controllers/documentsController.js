@@ -1,5 +1,7 @@
 const db = require('../config/database');
 const formatters = require('../utils/formatters');
+const fs = require('fs').promises;
+const path = require('path');
 
 // 全ドキュメント一覧を取得
 const getAllDocuments = async (req, res) => {
@@ -212,11 +214,104 @@ const getCategories = async (req, res) => {
   }
 };
 
+// ドキュメントを削除
+const deleteDocument = async (req, res) => {
+  const { id } = req.params;
+  const client = await db.getClient();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. ドキュメント情報を取得（ファイルパス確認のため）
+    const docQuery = `
+      SELECT d.*,
+             (SELECT COUNT(*) FROM rpa_queue WHERE file_id = d.fileID AND status = 'processing') as processing_count
+      FROM Documents d
+      WHERE d.fileID = $1
+    `;
+    const docResult = await client.query(docQuery, [id]);
+
+    if (docResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        error: 'Document not found',
+        message: `ドキュメントID ${id} が見つかりません`
+      });
+    }
+
+    const document = docResult.rows[0];
+
+    // 2. 処理中のキューがある場合は削除を拒否
+    if (document.processing_count > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        error: 'Cannot delete processing document',
+        message: 'このドキュメントは現在処理中のため削除できません。処理完了後に再度お試しください。'
+      });
+    }
+
+    // 3. Documentsテーブルから削除（CASCADE DELETEでrpa_queueも自動削除）
+    const deleteQuery = `
+      DELETE FROM Documents
+      WHERE fileID = $1
+      RETURNING fileID, fileName, patientID
+    `;
+    const deleteResult = await client.query(deleteQuery, [id]);
+
+    await client.query('COMMIT');
+
+    // 4. ファイルシステムからファイルを削除（トランザクション外）
+    if (document.pass) {
+      try {
+        await fs.unlink(document.pass);
+        console.log(`✅ File deleted: ${document.pass}`);
+      } catch (fileError) {
+        // ファイルが既に存在しない場合もエラーにしない
+        if (fileError.code !== 'ENOENT') {
+          console.error(`⚠️ Failed to delete file: ${document.pass}`, fileError);
+        }
+      }
+    }
+
+    // 5. WebSocket通知を送信
+    const websocketService = req.app.get('websocketService');
+    if (websocketService) {
+      websocketService.broadcast('document_deleted', {
+        file_id: deleteResult.rows[0].fileid,
+        file_name: deleteResult.rows[0].filename,
+        patient_id: deleteResult.rows[0].patientid
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Document deleted successfully',
+      data: {
+        file_id: deleteResult.rows[0].fileid,
+        file_name: deleteResult.rows[0].filename
+      }
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error deleting document:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete document',
+      message: error.message
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllDocuments,
   getPendingUploads,
   updateUploadStatus,
   getStatistics,
   createDocument,
-  getCategories
+  getCategories,
+  deleteDocument
 };

@@ -66,6 +66,39 @@ http://localhost:3000
 - `limit`: 1ページあたりの件数（デフォルト: 20）
 - `status`: uploaded/pending でフィルタ
 
+#### DELETE /api/documents/:id
+ドキュメントの削除（v3.2.0追加）
+
+**パラメータ**:
+- `id`: ドキュメントID（fileID）
+
+**レスポンス（成功）**:
+```json
+{
+  "success": true,
+  "message": "Document deleted successfully",
+  "data": {
+    "file_id": 16,
+    "file_name": "居宅レポート.pdf"
+  }
+}
+```
+
+**エラーレスポンス（処理中）**:
+```json
+{
+  "success": false,
+  "error": "Cannot delete processing document",
+  "message": "このドキュメントは現在処理中のため削除できません。処理完了後に再度お試しください。"
+}
+```
+
+**処理内容**:
+- RPA処理中（status='processing'）のドキュメントは削除不可
+- Documentsテーブルから削除（CASCADE DELETEでrpa_queueも自動削除）
+- ファイルシステムから物理ファイルも削除
+- WebSocket経由で`document_deleted`イベントを配信
+
 ### 患者管理API
 
 #### GET /api/patients/all
@@ -257,6 +290,19 @@ const ws = new WebSocket('ws://localhost:3000');
   "data": {
     "message": "エラーメッセージ",
     "queue_id": 123
+  }
+}
+```
+
+#### document_deleted
+ドキュメント削除通知（v3.2.0追加）
+```json
+{
+  "type": "document_deleted",
+  "data": {
+    "file_id": 16,
+    "file_name": "居宅レポート.pdf",
+    "patient_id": 99999999
   }
 }
 ```

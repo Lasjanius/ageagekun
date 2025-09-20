@@ -523,6 +523,298 @@ const getAIReportCategories = async (req, res) => {
   }
 };
 
+// 患者新規登録
+const createPatient = async (req, res) => {
+  const client = await db.getClient();
+
+  try {
+    const {
+      patientID,      // 手動入力される患者ID
+      patientName,
+      address,
+      birthdate,
+      visitingnurse,  // レガシー列（文字列）
+      homecareoffice, // レガシー列（文字列）
+      cmname,         // レガシー列（文字列）
+      cm_id,          // 外部キー
+      vns_id          // 外部キー
+    } = req.body;
+
+    // 必須項目のバリデーション
+    if (!patientID) {
+      return res.status(400).json({
+        success: false,
+        error: '患者IDは必須です'
+      });
+    }
+
+    if (!patientName) {
+      return res.status(400).json({
+        success: false,
+        error: '患者名は必須です'
+      });
+    }
+
+    // トランザクション開始
+    await client.query('BEGIN');
+
+    // 患者IDの重複チェック
+    const checkQuery = 'SELECT patientid FROM patients WHERE patientid = $1';
+    const checkResult = await client.query(checkQuery, [patientID]);
+
+    if (checkResult.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        error: `患者ID ${patientID} は既に使用されています`
+      });
+    }
+
+    // 外部キーが指定された場合、対応するレガシー列の値を取得
+    let finalCmname = cmname;
+    let finalHomecareoffice = homecareoffice;
+    let finalVisitingnurse = visitingnurse;
+
+    // ケアマネージャーの情報取得
+    if (cm_id && !cmname) {
+      const cmQuery = `
+        SELECT cm.name as cmname, co.name as office_name
+        FROM care_managers cm
+        LEFT JOIN care_offices co ON cm.office_id = co.office_id
+        WHERE cm.cm_id = $1
+      `;
+      const cmResult = await client.query(cmQuery, [cm_id]);
+
+      if (cmResult.rows.length > 0) {
+        finalCmname = cmResult.rows[0].cmname;
+        if (!homecareoffice && cmResult.rows[0].office_name) {
+          finalHomecareoffice = cmResult.rows[0].office_name;
+        }
+      }
+    }
+
+    // 訪問看護ステーションの情報取得
+    if (vns_id && !visitingnurse) {
+      const vnsQuery = 'SELECT name FROM visiting_nurse_stations WHERE vns_id = $1';
+      const vnsResult = await client.query(vnsQuery, [vns_id]);
+
+      if (vnsResult.rows.length > 0) {
+        finalVisitingnurse = vnsResult.rows[0].name;
+      }
+    }
+
+    // 患者情報の挿入
+    const insertQuery = `
+      INSERT INTO patients (
+        patientid,
+        patientname,
+        address,
+        birthdate,
+        visitingnurse,
+        homecareoffice,
+        cmname,
+        cm_id,
+        vns_id,
+        created_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP
+      ) RETURNING *
+    `;
+
+    const values = [
+      patientID,
+      patientName,
+      address || null,
+      birthdate || null,
+      finalVisitingnurse || null,
+      finalHomecareoffice || null,
+      finalCmname || null,
+      cm_id || null,
+      vns_id || null
+    ];
+
+    const result = await client.query(insertQuery, values);
+
+    // コミット
+    await client.query('COMMIT');
+
+    // 作成した患者の完全な情報を取得
+    const fullQuery = `
+      SELECT
+        patientID,
+        patientName,
+        birthdate,
+        address,
+        cm_id,
+        cm_name,
+        office_id,
+        office_name,
+        office_address,
+        vns_id,
+        vns_name,
+        vns_address,
+        vns_tel,
+        created_at
+      FROM patient_full_view
+      WHERE patientID = $1
+    `;
+
+    const fullResult = await db.query(fullQuery, [patientID]);
+
+    res.status(201).json({
+      success: true,
+      message: `患者（ID: ${patientID}）を登録しました`,
+      patient: fullResult.rows[0] || result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating patient:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create patient',
+      details: error.message
+    });
+  } finally {
+    client.release();
+  }
+};
+
+// 患者情報更新
+const updatePatient = async (req, res) => {
+  const client = await db.getClient();
+
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // 患者の存在確認
+    const checkQuery = 'SELECT patientid FROM patients WHERE patientid = $1';
+    const checkResult = await client.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '患者が見つかりません'
+      });
+    }
+
+    // トランザクション開始
+    await client.query('BEGIN');
+
+    // 更新可能なフィールドの定義
+    const allowedFields = [
+      'patientname', 'address', 'birthdate',
+      'visitingnurse', 'homecareoffice', 'cmname',
+      'cm_id', 'vns_id'
+    ];
+
+    // 更新クエリの構築
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) {
+        updateFields.push(`${field} = $${paramCount++}`);
+        values.push(updates[field]);
+      }
+    }
+
+    if (updateFields.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: '更新する項目がありません'
+      });
+    }
+
+    // 外部キーと連動したレガシー列の更新
+    if (updates.cm_id !== undefined) {
+      const cmQuery = `
+        SELECT cm.name as cmname, co.name as office_name
+        FROM care_managers cm
+        LEFT JOIN care_offices co ON cm.office_id = co.office_id
+        WHERE cm.cm_id = $1
+      `;
+      const cmResult = await client.query(cmQuery, [updates.cm_id]);
+
+      if (cmResult.rows.length > 0 && !updates.cmname) {
+        updateFields.push(`cmname = $${paramCount++}`);
+        values.push(cmResult.rows[0].cmname);
+
+        if (!updates.homecareoffice && cmResult.rows[0].office_name) {
+          updateFields.push(`homecareoffice = $${paramCount++}`);
+          values.push(cmResult.rows[0].office_name);
+        }
+      }
+    }
+
+    if (updates.vns_id !== undefined && !updates.visitingnurse) {
+      const vnsQuery = 'SELECT name FROM visiting_nurse_stations WHERE vns_id = $1';
+      const vnsResult = await client.query(vnsQuery, [updates.vns_id]);
+
+      if (vnsResult.rows.length > 0) {
+        updateFields.push(`visitingnurse = $${paramCount++}`);
+        values.push(vnsResult.rows[0].name);
+      }
+    }
+
+    values.push(id);
+    const updateQuery = `
+      UPDATE patients
+      SET ${updateFields.join(', ')}
+      WHERE patientid = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await client.query(updateQuery, values);
+
+    // コミット
+    await client.query('COMMIT');
+
+    // 更新後の完全な情報を取得
+    const fullQuery = `
+      SELECT
+        patientID,
+        patientName,
+        birthdate,
+        address,
+        cm_id,
+        cm_name,
+        office_id,
+        office_name,
+        office_address,
+        vns_id,
+        vns_name,
+        vns_address,
+        vns_tel,
+        created_at
+      FROM patient_full_view
+      WHERE patientID = $1
+    `;
+
+    const fullResult = await db.query(fullQuery, [id]);
+
+    res.json({
+      success: true,
+      message: '患者情報を更新しました',
+      patient: fullResult.rows[0] || result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating patient:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update patient',
+      details: error.message
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllPatients,
   getPatientById,
@@ -530,5 +822,7 @@ module.exports = {
   getPatientForReport,
   getKyotakuReportData,
   getPatientsWithAIStatus,
-  getAIReportCategories
+  getAIReportCategories,
+  createPatient,
+  updatePatient
 };

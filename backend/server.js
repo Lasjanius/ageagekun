@@ -40,12 +40,18 @@ const queueRoutes = require('./routes/queue');
 const filesRoutes = require('./routes/files');
 const patientsRoutes = require('./routes/patients');
 const aiRoutes = require('./routes/ai');
+const careOfficesRoutes = require('./routes/care-offices');
+const careManagersRoutes = require('./routes/care-managers');
+const vnsRoutes = require('./routes/vns');
 
 app.use('/api/documents', documentsRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/patients', patientsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/care-offices', careOfficesRoutes);
+app.use('/api/care-managers', careManagersRoutes);
+app.use('/api/vns', vnsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
