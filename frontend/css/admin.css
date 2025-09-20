@@ -225,8 +225,8 @@
 }
 
 .input-with-button .form-select {
-    flex: 1;
-    min-width: 300px; /* 最小幅を設定してドロップダウンを揃える */
+    flex: 0 0 auto;  /* flexによる伸縮を無効化 */
+    width: 500px;    /* 固定幅に設定 */
 }
 
 /* フォームアクション */

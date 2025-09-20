@@ -61,7 +61,9 @@
             if (currentPath === linkPath ||
                 (currentPath.endsWith('/') && linkPath.endsWith('index.html')) ||
                 (currentPath.endsWith('/index.html') && linkPath.endsWith('index.html')) ||
-                (currentPath.endsWith('/ai_report.html') && linkPath.endsWith('ai_report.html'))) {
+                (currentPath.endsWith('/ai_report.html') && linkPath.endsWith('ai_report.html')) ||
+                (currentPath.endsWith('/admin.html') && linkPath.endsWith('admin.html')) ||
+                (currentPath.endsWith('/patient-registration.html') && linkPath.endsWith('admin.html'))) {
                 link.classList.add('sidebar__link--active');
             }
         });

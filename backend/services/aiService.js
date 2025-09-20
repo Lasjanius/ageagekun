@@ -13,13 +13,30 @@ if (fs.existsSync(envPath)) {
 
 class AIService {
   constructor() {
-    // OpenAI クライアント初期化
-    if (process.env.OPENAI_API_KEY) {
+    // AI クライアント初期化
+    if (process.env.AI_PROVIDER === 'azure' && process.env.AZURE_OPENAI_API_KEY) {
+      // Azure OpenAI用の設定
+      // OpenAIクラスを使用し、baseURLでAzureエンドポイントを指定
+      this.openai = new OpenAI({
+        apiKey: process.env.AZURE_OPENAI_API_KEY,
+        baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`,
+        defaultQuery: { 'api-version': process.env.AZURE_OPENAI_API_VERSION || '2024-10-21' },
+        defaultHeaders: {
+          'api-key': process.env.AZURE_OPENAI_API_KEY
+        }
+      });
+      console.log('✅ Azure OpenAI initialized with:');
+      console.log(`  - Endpoint: ${process.env.AZURE_OPENAI_ENDPOINT}`);
+      console.log(`  - Deployment: ${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`);
+      console.log(`  - API Version: ${process.env.AZURE_OPENAI_API_VERSION || '2024-10-21'}`);
+    } else if (process.env.OPENAI_API_KEY) {
+      // 通常のOpenAI API
       this.openai = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY
       });
+      console.log('✅ OpenAI initialized successfully');
     } else {
-      console.warn('⚠️ OPENAI_API_KEY not set in .env.local');
+      console.warn('⚠️ No AI API key configured in .env.local');
       this.openai = null;
     }
 
@@ -43,14 +60,16 @@ class AIService {
   async generateKyotakuReport(patientData, karteContent) {
     // APIキー未設定の場合はエラーをthrow
     if (!this.openai) {
-      throw new Error('OpenAI APIキーが設定されていません。.env.localファイルにOPENAI_API_KEYを設定してください');
+      throw new Error('AI APIキーが設定されていません。.env.localファイルにAZURE_OPENAI_API_KEYまたはOPENAI_API_KEYを設定してください');
     }
 
     try {
       const prompt = this.buildPrompt(patientData, karteContent);
 
-      const completion = await this.openai.chat.completions.create({
-        model: process.env.AI_MODEL || "gpt-4o-mini",
+      // Azure OpenAIの場合、モデル名は不要（deploymentで指定済み）
+      // 通常のOpenAIの場合はモデル名を指定
+      const completionParams = {
+
         messages: [
           {
             role: "system",
@@ -61,10 +80,17 @@ class AIService {
             content: prompt
           }
         ],
-        temperature: 0.3,  // 低温で一貫性を高める
+        temperature: parseFloat(process.env.OPENAI_TEMPERATURE) || 0.3,  // 低温で一貫性を高める
         max_tokens: 1000,
         response_format: { type: "json_object" }
-      });
+      };
+
+      // Azure以外の場合はモデル名を追加
+      if (process.env.AI_PROVIDER !== 'azure') {
+        completionParams.model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+      }
+
+      const completion = await this.openai.chat.completions.create(completionParams);
 
       const result = JSON.parse(completion.choices[0].message.content);
 
@@ -89,7 +115,8 @@ class AIService {
     } catch (error) {
       const errorMessage = error.response?.data?.error?.message || error.message || 'AI生成に失敗しました';
       console.error('AI generation error:', errorMessage);
-      throw new Error(`OpenAI API Error: ${errorMessage}`);
+      const provider = process.env.AI_PROVIDER === 'azure' ? 'Azure OpenAI' : 'OpenAI';
+      throw new Error(`${provider} API Error: ${errorMessage}`);
     }
   }
 

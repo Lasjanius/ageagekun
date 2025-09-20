@@ -113,7 +113,7 @@
                             </select>
                             <button type="button" class="btn btn--outline btn--small" id="newOfficeBtn">
                                 <span class="btn__icon">➕</span>
-                                <span class="btn__text">居宅新規登録</span>
+                                <span class="btn__text">新規登録</span>
                             </button>
                         </div>
                         <input type="hidden" id="homecareoffice" name="homecareoffice">
@@ -128,7 +128,7 @@
                             </select>
                             <button type="button" class="btn btn--outline btn--small" id="newCmBtn">
                                 <span class="btn__icon">➕</span>
-                                <span class="btn__text">ケアマネージャー新規登録</span>
+                                <span class="btn__text">新規登録</span>
                             </button>
                         </div>
                         <input type="hidden" id="cmname" name="cmname">
@@ -143,7 +143,7 @@
                             </select>
                             <button type="button" class="btn btn--outline btn--small" id="newVnsBtn">
                                 <span class="btn__icon">➕</span>
-                                <span class="btn__text">訪看新規登録</span>
+                                <span class="btn__text">新規登録</span>
                             </button>
                         </div>
                         <input type="hidden" id="visitingnurse" name="visitingnurse">
@@ -182,9 +182,15 @@
                         </div>
                         <div class="form-group">
                             <label for="cmOffice" class="form-label">所属事業所</label>
-                            <select id="cmOffice" class="form-select">
-                                <option value="">選択してください</option>
-                            </select>
+                            <div class="input-with-button">
+                                <select id="cmOffice" class="form-select">
+                                    <option value="">選択してください</option>
+                                </select>
+                                <button type="button" class="btn btn--outline btn--small" id="newOfficeFromCmBtn">
+                                    <span class="btn__icon">➕</span>
+                                    <span class="btn__text">新規登録</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -282,6 +288,8 @@
     <!-- JavaScript -->
     <script src="js/navigation.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/modalManager.js"></script>
+    <script src="js/masterDataService.js"></script>
     <script src="js/patient-registration.js"></script>
 </body>
 </html>
