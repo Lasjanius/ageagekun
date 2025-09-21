@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the "ageagekun" (あげあげくん) project - a document upload automation system for the モバカルネット (Mobakal Net) medical records system. The project automates the process of uploading patient documents to the electronic medical records platform and generates medical reports.
+This is the "ageagekun" (あげあげくん) project - a document upload automation system for the モバカルネット (Mobakal Net) medical records system. The project automates the process of uploading patient documents to the electronic medical records platform and generates medical reports using Azure OpenAI API (v4.0.0以降).
 
 ## Product Requirements Documentation
 
@@ -70,6 +70,34 @@ allright/
 - **cm_workload_view** - ケアマネージャー業務量
 - **vns_workload_view** - 訪問看護ステーション業務量
 - **office_statistics_view** - 事業所統計
+
+## Azure OpenAI Configuration (v4.0.0以降)
+
+### 環境変数設定
+```bash
+# .env.local
+AI_PROVIDER=azure
+AZURE_OPENAI_API_KEY=your_api_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2024-10-21
+OPENAI_TEMPERATURE=0.3
+```
+
+### テストコマンド
+```bash
+# Azure OpenAI接続テスト
+cd backend && node test-azure-openai.js
+
+# レポート生成機能テスト
+cd backend && node test-report-generation.js
+```
+
+### 現在の設定 (Sweden Central)
+- **リージョン**: Sweden Central
+- **モデル**: gpt-4o-mini
+- **APIバージョン**: 2024-10-21
+- **エンドポイント**: https://hyos-mfrzvno2-swedencentral.services.ai.azure.com
 
 ## Common Commands
 
