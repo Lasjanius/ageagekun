@@ -144,6 +144,9 @@ const App = {
             if (action === 'delete') {
                 const fileId = modal.dataset.fileId;
                 this.handleDeleteDocument(fileId);
+            } else if (action === 'delete-queue') {
+                const queueId = modal.dataset.queueId;
+                this.handleDeleteQueueItem(queueId);
             } else {
                 this.startUpload();
             }
@@ -154,6 +157,7 @@ const App = {
             // データセット属性をクリア
             delete UI.elements.confirmModal.dataset.action;
             delete UI.elements.confirmModal.dataset.fileId;
+            delete UI.elements.confirmModal.dataset.queueId;
         });
         
         // アップロードモーダル
@@ -191,6 +195,12 @@ const App = {
                 const fileId = button.dataset.fileId;
                 const fileName = button.dataset.fileName;
                 UI.showDeleteConfirmModal(fileId, fileName);
+            } else if (e.target.closest('.queue-item__delete')) {
+                const button = e.target.closest('.queue-item__delete');
+                const queueId = button.dataset.queueId;
+                const fileName = button.dataset.fileName;
+                const patientName = button.dataset.patientName;
+                UI.showQueueDeleteConfirmModal(queueId, fileName, patientName);
             }
         });
     },
@@ -779,6 +789,35 @@ const App = {
             // データセット属性をクリア
             delete UI.elements.confirmModal.dataset.action;
             delete UI.elements.confirmModal.dataset.fileId;
+        }
+    },
+
+    // キューアイテム削除処理
+    async handleDeleteQueueItem(queueId) {
+        try {
+            UI.hideConfirmModal();
+            UI.showToast('削除中...', 'info');
+
+            const response = await API.deleteQueueItem(queueId);
+
+            if (response.success) {
+                UI.showToast(`キューアイテム「${response.data.queue_id}」を削除しました`, 'success');
+
+                // キューモニターが表示されている場合は更新
+                if (this.state.queueMonitor.isVisible) {
+                    await this.refreshQueueMonitor();
+                }
+            } else {
+                UI.showToast('キューアイテムの削除に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to delete queue item:', error);
+            const errorMessage = error.message || 'キューアイテムの削除に失敗しました';
+            UI.showToast(errorMessage, 'error');
+        } finally {
+            // データセット属性をクリア
+            delete UI.elements.confirmModal.dataset.action;
+            delete UI.elements.confirmModal.dataset.queueId;
         }
     }
 };

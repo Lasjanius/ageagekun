@@ -516,6 +516,67 @@ const getPendingQueues = async (req, res) => {
   }
 };
 
+// キューアイテムを削除（rpa_queueテーブルのみ、documentsテーブルは変更しない）
+const deleteQueueItem = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 削除対象のキューアイテムを確認
+    const checkQuery = `
+      SELECT id, file_id, patient_id, status
+      FROM rpa_queue
+      WHERE id = $1
+    `;
+    const checkResult = await db.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Queue item not found',
+        message: `キューID ${id} が見つかりません`
+      });
+    }
+
+    const queueItem = checkResult.rows[0];
+
+    // rpa_queueからのみ削除（documentsテーブルは変更しない）
+    const deleteQuery = `
+      DELETE FROM rpa_queue
+      WHERE id = $1
+      RETURNING id, file_id, patient_id, status
+    `;
+    const deleteResult = await db.query(deleteQuery, [id]);
+
+    // WebSocket通知を送信
+    const websocketService = req.app.get('websocketService');
+    if (websocketService) {
+      websocketService.broadcast('queue_deleted', {
+        queue_id: deleteResult.rows[0].id,
+        file_id: deleteResult.rows[0].file_id,
+        patient_id: deleteResult.rows[0].patient_id
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'キューアイテムを削除しました',
+      data: {
+        queue_id: deleteResult.rows[0].id,
+        file_id: deleteResult.rows[0].file_id,
+        patient_id: deleteResult.rows[0].patient_id,
+        previous_status: deleteResult.rows[0].status
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting queue item:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete queue item',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   createBatchQueue,
   getQueueStatus,
@@ -527,6 +588,7 @@ module.exports = {
   updateToFailed,
   getQueueOverview,
   getPendingQueues,
+  deleteQueueItem,
   cancelQueue,
   // 定数もエクスポート
   QUEUE_STATUS,

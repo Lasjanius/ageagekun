@@ -21,4 +21,7 @@ router.put('/:id/complete', queueController.updateToComplete);           // → 
 // キューキャンセル用エンドポイント
 router.delete('/cancel-all', queueController.cancelQueue);
 
+// 個別キューアイテム削除エンドポイント
+router.delete('/:id', queueController.deleteQueueItem);
+
 module.exports = router;

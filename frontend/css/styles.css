@@ -805,6 +805,11 @@ body {
     z-index: 1000;
 }
 
+/* 確認ダイアログは他のモーダルより上位に表示 */
+#confirmModal {
+    z-index: 1100;
+}
+
 .modal__overlay {
     position: absolute;
     top: 0;

@@ -227,12 +227,21 @@ const UI = {
                 </div>
                 <div class="file-item__date">${new Date(file.created_at).toLocaleDateString('ja-JP')}</div>
                 <div class="file-item__size">${fileSize}</div>
-                <a href="${filePath}" 
-                   class="file-item__link" 
-                   title="ファイルを開く"
-                   target="_blank">
-                   <i class="fa-solid fa-up-right-from-square"></i>
-                </a>
+                <div class="file-item__actions" style="display: flex; gap: 10px;">
+                    <a href="${filePath}"
+                       class="file-item__link"
+                       title="ファイルを開く"
+                       target="_blank">
+                       <i class="fa-solid fa-up-right-from-square"></i>
+                    </a>
+                    <button class="document-item__delete"
+                            data-file-id="${file.file_id}"
+                            data-file-name="${file.file_name.replace(/"/g, '&quot;')}"
+                            title="削除"
+                            style="background: #ff6b6b; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
     },
@@ -400,6 +409,19 @@ const UI = {
         this.elements.confirmModal.style.display = 'block';
         this.elements.confirmModal.dataset.action = 'delete';
         this.elements.confirmModal.dataset.fileId = fileId;
+    },
+
+    showQueueDeleteConfirmModal(queueId, fileName, patientName) {
+        this.elements.confirmMessage.textContent =
+            `このキュータスクを削除してもよろしいですか？`;
+        this.elements.confirmList.innerHTML =
+            `<li style="color: #ff6b6b; font-weight: bold;">📋 キューID: ${queueId}</li>
+             <li style="color: #333;">📄 ファイル: ${fileName}</li>
+             <li style="color: #333;">👤 患者: ${patientName}</li>
+             <li style="color: #868e96; font-size: 0.9em;">※ キューからのみ削除されます（ファイルは削除されません）</li>`;
+        this.elements.confirmModal.style.display = 'block';
+        this.elements.confirmModal.dataset.action = 'delete-queue';
+        this.elements.confirmModal.dataset.queueId = queueId;
     },
     
     // アップロードモーダルを表示
@@ -635,6 +657,16 @@ const UI = {
                     <td>${errorMsg}</td>
                     <td>${createdAt}</td>
                     <td>${updatedAt}</td>
+                    <td style="text-align: center;">
+                        <button class="queue-item__delete"
+                                data-queue-id="${queue.id}"
+                                data-file-name="${(queue.file_name || '').replace(/"/g, '&quot;')}"
+                                data-patient-name="${(queue.patient_name || '').replace(/"/g, '&quot;')}"
+                                title="キューから削除"
+                                style="background: #ff6b6b; border: none; color: white; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                            <i class="fa-solid fa-trash" style="font-size: 10px;"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         }).join('');

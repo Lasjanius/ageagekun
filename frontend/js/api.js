@@ -207,4 +207,17 @@ const API = {
             return [];
         }
     },
+
+    // キューアイテムを削除
+    async deleteQueueItem(queueId) {
+        try {
+            const response = await this.request(`/queue/${queueId}`, {
+                method: 'DELETE',
+            });
+            return response;
+        } catch (error) {
+            console.error(`Failed to delete queue item ${queueId}:`, error);
+            throw error;
+        }
+    },
 };
