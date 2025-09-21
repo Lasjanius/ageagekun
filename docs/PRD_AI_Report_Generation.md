@@ -4,7 +4,7 @@
 ## 1. 概要
 
 ### 1.1 プロダクト概要
-AI居宅療養管理指導報告書自動生成機能は、医療従事者が患者の診療記録（カルテ）から居宅療養管理指導報告書を自動生成するシステムです。OpenAI GPT-4o-miniモデルを活用し、カルテ内容から適切な医療情報を抽出・整理して、標準化された報告書を生成します。
+AI居宅療養管理指導報告書自動生成機能は、医療従事者が患者の診療記隂（カルテ）から居宅療養管理指導報告書を自動生成するシステムです。Azure OpenAI (gpt-4o-mini)を活用し、カルテ内容から適切な医療情報を抽出・整理して、標準化された報告書を生成します。
 
 ### 1.2 目的
 - 報告書作成時間の短縮（手動作成30分 → AI生成3秒）
@@ -102,8 +102,8 @@ AI居宅療養管理指導報告書自動生成機能は、医療従事者が患
 └────────────┬───────────┘
              ↓
 ┌────────────────────────┐  ┌───────────────────┐
-│     PostgreSQL DB      │  │    OpenAI API     │
-│   - patients           │  │  - GPT-4o-mini    │
+│     PostgreSQL DB      │  │  Azure OpenAI API  │
+│   - patients           │  │  - gpt-4o-mini     │
 │   - Documents          │  │  - Text Generation│
 │   - rpa_queue          │  └───────────────────┘
 └────────────────────────┘
@@ -208,7 +208,7 @@ POST /api/ai/generate-kyotaku-report
 
 ### 3.5 AI処理仕様
 
-#### 3.5.1 OpenAI API設定
+#### 3.5.1 Azure OpenAI API設定
 ```javascript
 const completion = await openai.chat.completions.create({
   model: "gpt-4o-mini",
@@ -374,7 +374,7 @@ AI_MODEL=gpt-4o-mini
 ```javascript
 // backend/services/aiService.js
 if (!this.openai) {
-  throw new Error('OpenAI APIキーが設定されていません。.env.localファイルにOPENAI_API_KEYを設定してください');
+  throw new Error('AI APIキーが設定されていません。.env.localファイルにAZURE_OPENAI_API_KEYを設定してください');
 }
 ```
 
@@ -403,7 +403,7 @@ if (!this.openai) {
 
 ### 8.1 レスポンス時間
 - 患者リスト取得: < 500ms
-- AI報告書生成: 3-5秒（OpenAI API依存）
+- AI報告書生成: 3-5秒（Azure OpenAI API依存）
 - 画面遷移: < 200ms
 - LocalStorage読み書き: < 10ms
 
@@ -491,7 +491,7 @@ let pathname = parsedUrl.pathname;
 **修正**: 固定値をnullに変更、AIやユーザー入力から取得するよう修正
 
 ### 11.3 AI生成が失敗する
-**原因**: OpenAI APIキー未設定
+**原因**: Azure OpenAI APIキー未設定
 **解決**: .env.localファイルにAPIキーを設定
 
 ## 12. 技術スタック詳細

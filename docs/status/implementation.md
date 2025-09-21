@@ -49,7 +49,7 @@
   - `/api/queue/cancel-all`
 - ✅ ファイルサービスAPI (`backend/routes/files.js`)
 - ✅ AI処理サービス (`backend/services/aiService.js`)
-  - OpenAI API統合
+  - Azure OpenAI API統合
   - プロンプトエンジニアリング
   - JSON形式レスポンス
 - ✅ AI APIエンドポイント (`backend/routes/ai.js`)
@@ -76,8 +76,8 @@
 
 ### AI報告書機能
 - ✅ 基盤整備
-  - OpenAI APIキーの設定（.env.local）
-  - GPT-4o-miniモデルの使用
+  - Azure OpenAI APIキーの設定（.env.local）
+  - gpt-4o-miniモデルの使用（Sweden Central）
   - JSON レスポンス形式の実装
 - ✅ データベース設計
   - 正規化されたテーブル構造
@@ -198,6 +198,21 @@
 
 ## リリースノート
 
+### v4.0.0 (2025-09-20)
+- ✨ Azure OpenAI APIへの完全移行
+- 🔒 本番環境対応のセキュアなAI基盤
+  - Sweden Centralリージョンのgpt-4o-miniモデル
+  - OpenAI APIからの完全移行
+  - 環境変数の再構成（AZURE_OPENAI_*）
+- 🧪 テストスクリプトの追加
+  - `test-azure-openai.js`: 接続テスト
+  - `test-report-generation.js`: レポート生成テスト
+  - Hello Worldミームテストと JSON応答検証
+- 🔄 aiService.jsの全面改修
+  - Azure OpenAI対応
+  - プロバイダー切り替え可能な設計
+  - エラーハンドリング改善
+
 ### v3.2.0 (2025-09-20)
 - ✨ ドキュメント削除機能の実装
 - 🗑️ フロントエンドから個別ドキュメントの削除が可能に
@@ -306,7 +321,7 @@
 
 ### v1.5.0 (2025-01-15)
 - ✨ AI報告書作成機能追加
-- 🔧 OpenAI API統合
+- 🔧 Azure OpenAI API統合
 - 📝 居宅療養管理指導報告書テンプレート
 
 ### v1.0.0 (2025-01-01)

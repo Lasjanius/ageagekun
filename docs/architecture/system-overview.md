@@ -56,7 +56,7 @@
 - **ランタイム**: Node.js v18+
 - **フレームワーク**: Express.js
 - **WebSocket**: ws ライブラリ
-- **AI**: OpenAI API (GPT-4o-mini)
+- **AI**: Azure OpenAI API (gpt-4o-mini, Sweden Central)
 
 ### データベース
 - **RDBMS**: PostgreSQL 17
