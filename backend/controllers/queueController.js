@@ -1,5 +1,24 @@
 const db = require('../config/database');
 
+// ステータス定義（定数化）
+const QUEUE_STATUS = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  UPLOADED: 'uploaded',
+  READY_TO_PRINT: 'ready_to_print',
+  DONE: 'done',
+  FAILED: 'failed',
+  CANCELED: 'canceled'
+};
+
+// アクティブなステータス（ホワイトリスト）
+const ACTIVE_STATUSES = [
+  QUEUE_STATUS.PENDING,
+  QUEUE_STATUS.PROCESSING,
+  QUEUE_STATUS.UPLOADED,
+  QUEUE_STATUS.READY_TO_PRINT
+];
+
 // 複数のファイルをキューに追加
 const createBatchQueue = async (req, res) => {
   const { files } = req.body; // Array of file objects
@@ -155,40 +174,130 @@ const updateToProcessing = async (req, res) => {
   }
 };
 
-// ステータスを'done'に更新（PAD用）
-const updateToComplete = async (req, res) => {
+// ステータスを'uploaded'に更新（PAD用）
+const updateToUploaded = async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const query = `
       UPDATE rpa_queue
-      SET status = 'done'
-      WHERE id = $1 AND status = 'processing'
+      SET status = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND status = $3
       RETURNING *
     `;
-    
-    const result = await db.query(query, [id]);
-    
+
+    const result = await db.query(query, [
+      id,
+      QUEUE_STATUS.UPLOADED,
+      QUEUE_STATUS.PROCESSING
+    ]);
+
     if (result.rows.length === 0) {
-      return res.status(404).json({
+      return res.status(409).json({
         success: false,
-        error: 'Queue item not found or not in processing state'
+        error: 'Invalid state transition or queue item not found'
       });
     }
-    
+
     res.json({
       success: true,
-      message: 'Upload completed successfully',
+      message: 'Upload completed',
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error updating to complete:', error);
+    console.error('Error updating to uploaded:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update status',
       message: error.message
     });
   }
+};
+
+// ステータスを'ready_to_print'に更新
+const updateToReadyToPrint = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = `
+      UPDATE rpa_queue
+      SET status = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND status = $3
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      id,
+      QUEUE_STATUS.READY_TO_PRINT,
+      QUEUE_STATUS.UPLOADED
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Invalid state transition or queue item not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Ready for printing',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating to ready_to_print:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update status',
+      message: error.message
+    });
+  }
+};
+
+// ステータスを'done'に更新（印刷完了時）
+const updateToDone = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = `
+      UPDATE rpa_queue
+      SET status = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND status = $3
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      id,
+      QUEUE_STATUS.DONE,
+      QUEUE_STATUS.READY_TO_PRINT
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Invalid state transition or queue item not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'All processing completed',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating to done:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update status',
+      message: error.message
+    });
+  }
+};
+
+// 旧updateToCompleteは後方互換性のため残す（uploadedにリダイレクト）
+const updateToComplete = async (req, res) => {
+  console.warn('updateToComplete is deprecated. Use updateToUploaded instead.');
+  return updateToUploaded(req, res);
 };
 
 // ステータスを'failed'に更新（PAD用）
@@ -248,8 +357,11 @@ const getQueueOverview = async (req, res) => {
     const overview = {
       pending: 0,
       processing: 0,
+      uploaded: 0,
+      ready_to_print: 0,
       done: 0,
-      failed: 0
+      failed: 0,
+      canceled: 0
     };
     
     result.rows.forEach(row => {
@@ -346,7 +458,7 @@ const cancelQueue = async (req, res) => {
   }
 };
 
-// 保留中のキューアイテムを取得（status != 'done'）
+// 保留中のキューアイテムを取得（アクティブなステータスのみ）
 const getPendingQueues = async (req, res) => {
   try {
     const query = `
@@ -366,11 +478,11 @@ const getPendingQueues = async (req, res) => {
       FROM rpa_queue q
       LEFT JOIN Documents d ON q.file_id = d.fileID
       LEFT JOIN patients p ON q.patient_id = p.patientID
-      WHERE q.status != 'done'
+      WHERE q.status = ANY($1::varchar[])
       ORDER BY q.created_at DESC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [ACTIVE_STATUSES]);
 
     // payload内のデータも含めて整形
     const formattedQueues = result.rows.map(row => ({
@@ -408,9 +520,15 @@ module.exports = {
   createBatchQueue,
   getQueueStatus,
   updateToProcessing,
-  updateToComplete,
+  updateToUploaded,        // 新規追加
+  updateToReadyToPrint,    // 新規追加
+  updateToDone,           // 新規追加
+  updateToComplete,       // 後方互換性のため残す
   updateToFailed,
   getQueueOverview,
   getPendingQueues,
-  cancelQueue
+  cancelQueue,
+  // 定数もエクスポート
+  QUEUE_STATUS,
+  ACTIVE_STATUSES
 };

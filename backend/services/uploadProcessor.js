@@ -100,8 +100,8 @@ class UploadProcessor {
       // エラーをログに記録（必要に応じて）
       try {
         await db.query(
-          'UPDATE rpa_queue SET error_message = $1 WHERE file_id = $2 AND status = $3',
-          [`File movement failed: ${error.message}`, file_id, 'done']
+          'UPDATE rpa_queue SET error_message = $1 WHERE file_id = $2 AND status IN ($3, $4)',
+          [`File movement failed: ${error.message}`, file_id, 'ready_to_print', 'uploaded']
         );
       } catch (dbError) {
         console.error('❌ Failed to log error:', dbError);
@@ -139,14 +139,14 @@ class UploadProcessor {
   async getCompletionStats() {
     try {
       const result = await db.query(`
-        SELECT 
+        SELECT
           COUNT(*) as total,
-          COUNT(CASE WHEN status = 'done' THEN 1 END) as successful,
+          COUNT(CASE WHEN status IN ('ready_to_print', 'done') THEN 1 END) as successful,
           COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed
         FROM rpa_queue
         WHERE DATE(created_at) = CURRENT_DATE
       `);
-      
+
       return result.rows[0] || { total: 0, successful: 0, failed: 0 };
     } catch (error) {
       console.error('❌ Error getting completion stats:', error);
