@@ -516,13 +516,13 @@ const App = {
             // 進捗を計算（canceledも完了扱いにする）
             const total = this.state.uploadQueue.length;
             const completed = this.state.uploadQueue.filter(
-                q => q.status === 'done' || q.status === 'failed' || q.status === 'canceled'
+                q => StatusHelper.isComplete(q.status)
             ).length;
 
             // デバッグ: 進捗更新の詳細
             console.log(`📊 Progress update: ${completed}/${total} (${Math.round((completed/total)*100)}%)`);
             console.log('Completed items:', this.state.uploadQueue.filter(
-                q => q.status === 'done' || q.status === 'failed' || q.status === 'canceled'
+                q => StatusHelper.isComplete(q.status)
             ).map(q => ({queue_id: q.queue_id, status: q.status})));
 
             UI.updateProgress(completed, total);
@@ -539,7 +539,8 @@ const App = {
         }
 
         // ファイルリストも更新（isUploadedの反映）
-        if (data.status === 'done') {
+        // uploadedステータス時にファイルが移動される
+        if (data.status === QUEUE_STATUS.UPLOADED) {
             const file = this.state.files.find(f => f.file_id === data.file_id);
             if (file) {
                 file.isuploaded = true;
@@ -559,7 +560,7 @@ const App = {
     // 全タスク完了チェック
     checkAllCompleted() {
         return this.state.uploadQueue.every(
-            item => item.status === 'done' || item.status === 'failed' || item.status === 'canceled'
+            item => StatusHelper.isComplete(item.status)
         );
     },
     
@@ -574,9 +575,11 @@ const App = {
         }
 
         const total = this.state.uploadQueue.length;
-        const completed = this.state.uploadQueue.filter(q => q.status === 'done').length;
-        const failed = this.state.uploadQueue.filter(q => q.status === 'failed').length;
-        const canceled = this.state.uploadQueue.filter(q => q.status === 'canceled').length;
+        const completed = this.state.uploadQueue.filter(q => q.status === QUEUE_STATUS.DONE).length;
+        const failed = this.state.uploadQueue.filter(q => q.status === QUEUE_STATUS.FAILED).length;
+        const canceled = this.state.uploadQueue.filter(q => q.status === QUEUE_STATUS.CANCELED).length;
+        const uploaded = this.state.uploadQueue.filter(q => q.status === QUEUE_STATUS.UPLOADED).length;
+        const readyToPrint = this.state.uploadQueue.filter(q => q.status === QUEUE_STATUS.READY_TO_PRINT).length;
 
         // テーブルを非表示にして完了メッセージを表示
         const queueTable = document.querySelector('.queue-table');

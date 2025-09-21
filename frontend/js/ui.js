@@ -462,9 +462,20 @@ const UI = {
         const html = queueItems.map(item => {
             const statusInfo = this.getStatusInfo(item.status);
             const elapsedTime = this.calculateElapsedTime(item.created_at);
-            const rowClass = item.status === 'processing' ? 'queue-row--processing' :
-                           item.status === 'failed' ? 'queue-row--failed' :
-                           item.status === 'done' ? 'queue-row--done' : '';
+            // ステータスに応じたクラス名を生成
+            const getQueueRowClass = (status) => {
+                const classMap = {
+                    'pending': 'queue-row--pending',
+                    'processing': 'queue-row--processing',
+                    'uploaded': 'queue-row--uploaded',
+                    'ready_to_print': 'queue-row--print-ready',
+                    'done': 'queue-row--done',
+                    'failed': 'queue-row--failed',
+                    'canceled': 'queue-row--canceled'
+                };
+                return classMap[status] || '';
+            };
+            const rowClass = getQueueRowClass(item.status);
 
             return `
                 <tr class="${rowClass}">
@@ -487,11 +498,19 @@ const UI = {
 
     // ステータス情報を取得
     getStatusInfo(status) {
+        // constants.jsで定義されたSTATUS_CONFIGを使用
+        if (window.StatusHelper) {
+            const config = window.StatusHelper.getConfig(status);
+            return { icon: config.icon, text: config.label };
+        }
+        // フォールバック
         const statusMap = {
-            'pending': { icon: '⏳', text: '待機中' },
+            'pending': { icon: '⏳', text: '処理待ち' },
             'processing': { icon: '🔄', text: '処理中' },
+            'uploaded': { icon: '☁️', text: 'アップロード完了' },
+            'ready_to_print': { icon: '🖨️', text: '印刷待ち' },
             'done': { icon: '✅', text: '完了' },
-            'failed': { icon: '❌', text: '失敗' },
+            'failed': { icon: '❌', text: 'エラー' },
             'canceled': { icon: '⚠️', text: 'キャンセル' }
         };
         return statusMap[status] || { icon: '❓', text: status };

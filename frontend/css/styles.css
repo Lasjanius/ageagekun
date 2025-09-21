@@ -742,6 +742,16 @@ body {
     color: var(--color-primary);
 }
 
+.status-badge--uploaded {
+    background: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+}
+
+.status-badge--ready_to_print {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
 .status-badge--done {
     background: rgba(22, 163, 74, 0.1);
     color: var(--color-success);
@@ -750,6 +760,11 @@ body {
 .status-badge--failed {
     background: rgba(220, 38, 38, 0.1);
     color: var(--color-danger);
+}
+
+.status-badge--canceled {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
 }
 
 /* ローディング */
@@ -1159,20 +1174,50 @@ body {
     }
 }
 
-/* Processing Row Highlight */
+/* Queue Row Status Styles */
+.queue-row--pending {
+    background-color: rgba(108, 117, 125, 0.05);
+    border-left: 3px solid #6c757d;
+}
+
 .queue-row--processing {
     background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, transparent 100%);
     border-left: 3px solid var(--color-primary);
+    animation: pulse 2s infinite;
 }
 
-/* Failed Row Highlight */
+.queue-row--uploaded {
+    background-color: rgba(23, 162, 184, 0.05);
+    border-left: 3px solid #17a2b8;
+}
+
+.queue-row--print-ready {
+    background-color: rgba(255, 193, 7, 0.05);
+    border-left: 3px solid #ffc107;
+}
+
+.queue-row--done {
+    background-color: rgba(40, 167, 69, 0.05);
+    border-left: 3px solid #28a745;
+    opacity: 0.8;
+}
+
 .queue-row--failed {
     background-color: rgba(244, 67, 54, 0.05);
+    border-left: 3px solid #dc3545;
 }
 
-/* Completed Row Fade */
-.queue-row--done {
-    opacity: 0.8;
+.queue-row--canceled {
+    background-color: rgba(108, 117, 125, 0.05);
+    border-left: 3px solid #6c757d;
+    opacity: 0.7;
+}
+
+/* Processing animation */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }
 
 /* ==================== */
