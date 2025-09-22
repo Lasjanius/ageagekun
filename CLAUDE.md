@@ -63,7 +63,14 @@ allright/
 
 6. **rpa_queue** - RPA処理キュー
    - id, file_id, patient_id, status
+   - status値: pending, processing, uploaded, ready_to_print, merging, done, failed, canceled
    - created_at, updated_at
+
+7. **batch_prints** - 連結PDF管理 (v5.0.0)
+   - id, file_name, file_path, file_size
+   - page_count, document_count
+   - document_ids[], success_ids[], failed_ids[]
+   - created_at
 
 ### Views:
 - **patient_full_view** - 患者情報統合ビュー（全関連情報を結合）
@@ -112,8 +119,14 @@ cd backend && node test-report-generation.js
 # Execute SQL file
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -f ageagekun/schema/create_schema.sql
 
+# Create batch_prints table (v5.0.0)
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -f ageagekun/schema/batch_print_table.sql
+
 # Check tables
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "\dt"
+
+# Check 60-day old PDFs
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "SELECT * FROM batch_prints WHERE created_at < NOW() - INTERVAL '60 days';"
 ```
 
 ## PostgreSQL Connection Troubleshooting
@@ -250,7 +263,38 @@ Key UI elements use AutomationId:
 ### Queue API Endpoints
 - `POST /api/queue/create-batch` - バッチキュー作成
 - `GET /api/queue/:id/status` - キューステータス確認
-- `PUT /api/queue/:id/complete` - 完了マーク
+- `PUT /api/queue/:id/complete` - 完了マーク（非推奨、uploadedへリダイレクト）
+- `PUT /api/queue/:id/uploaded` - アップロード完了
+- `PUT /api/queue/:id/ready-to-print` - 印刷準備完了
+- `PUT /api/queue/:id/done` - 印刷完了
+- `DELETE /api/queue/:id` - キュー削除
+
+### Batch Print API Endpoints (v5.0.0) ✅
+- `GET /api/batch-print/ready-documents` - ready_to_print状態のドキュメント取得
+- `POST /api/batch-print/merge` - PDF連結処理開始
+- `GET /api/batch-print/view/:batchId` - 連結PDFを表示
+- `GET /api/batch-print/history` - 連結PDF履歴取得
+- `DELETE /api/batch-print/:batchId` - 連結PDF削除（物理削除）
+
+### PDFバッチ印刷テストコマンド (v5.0.0)
+```bash
+# ready_to_printドキュメントの確認
+curl http://localhost:3000/api/batch-print/ready-documents
+
+# PDF連結処理の開始
+curl -X POST http://localhost:3000/api/batch-print/merge \
+  -H "Content-Type: application/json" \
+  -d '{"documentIds": [28, 29, 30], "sortBy": "createdAt", "sortOrder": "asc"}'
+
+# 履歴確認
+curl http://localhost:3000/api/batch-print/history
+
+# 連結PDFの表示（ブラウザで開く）
+start http://localhost:3000/api/batch-print/view/1
+
+# 連結PDFの削除
+curl -X DELETE http://localhost:3000/api/batch-print/1
+```
 
 ## Features
 
@@ -269,6 +313,14 @@ Key UI elements use AutomationId:
 - 外部キー制約による整合性保証
 - ビューによる統合データアクセス
 
+### 4. PDF連結印刷機能 (v5.0.0) ✅
+- **最大200件まで選択可能**（メモリ最適化：500MB制限）
+- **非同期処理でバックグラウンド実行**（Redis不要の軽量実装）
+- **新しいタブで自動PDF表示**
+- **履歴管理と60日経過アラート**
+- **mergingステータスでエラー可視化**
+- **セキュリティ対策**（パストラバーサル防止、documentIds検証）
+
 ## Development Notes
 
 - PostgreSQL 17 is installed at `C:\Program Files\PostgreSQL\17\`
@@ -278,6 +330,33 @@ Key UI elements use AutomationId:
 - Document files are organized by patient ID in separate folders
 
 ## Troubleshooting
+
+### PDFバッチ印刷機能のトラブルシューティング (v5.0.0)
+
+#### mergingステータスエラーの解決
+```bash
+# rpa_queueテーブルの制約確認
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "\d rpa_queue"
+
+# mergingステータスが制約にない場合は追加
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "ALTER TABLE rpa_queue DROP CONSTRAINT rpa_queue_status_check;"
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "ALTER TABLE rpa_queue ADD CONSTRAINT rpa_queue_status_check CHECK (status IN ('pending', 'processing', 'uploaded', 'ready_to_print', 'merging', 'done', 'failed', 'canceled'));"
+```
+
+#### ready_to_printステータスへのリセット
+```bash
+# 特定のIDをready_to_printに戻す
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "UPDATE rpa_queue SET status = 'ready_to_print' WHERE id IN (28, 29, 30);"
+```
+
+#### 連結PDFの確認
+```bash
+# 生成されたPDFファイルの確認
+ls -la patients/batch_prints/
+
+# batch_printsテーブルの内容確認
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -d ageagekun -w -c "SELECT * FROM batch_prints;"
+```
 
 ### PowerShell Script Encoding Issues
 

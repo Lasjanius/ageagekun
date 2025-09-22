@@ -17,6 +17,9 @@ const uploadProcessor = require('./services/uploadProcessor');
 const WebSocketService = require('./services/websocketService');
 const wsService = new WebSocketService();
 
+// Batch Print Service
+const batchPrintService = require('./services/batchPrintService');
+
 // Middleware
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
@@ -43,6 +46,7 @@ const aiRoutes = require('./routes/ai');
 const careOfficesRoutes = require('./routes/care-offices');
 const careManagersRoutes = require('./routes/care-managers');
 const vnsRoutes = require('./routes/vns');
+const batchPrintRoutes = require('./routes/batchPrint');
 
 app.use('/api/documents', documentsRoutes);
 app.use('/api/queue', queueRoutes);
@@ -52,6 +56,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/care-offices', careOfficesRoutes);
 app.use('/api/care-managers', careManagersRoutes);
 app.use('/api/vns', vnsRoutes);
+app.use('/api/batch-print', batchPrintRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -118,7 +123,11 @@ server.listen(PORT, async () => {
   // Initialize WebSocket service
   await wsService.initialize(server);
   console.log('🌐 WebSocket service activated');
-  
+
+  // Connect WebSocket service to batch print service
+  batchPrintService.setWebSocketService(wsService);
+  console.log('🖨️ Batch print service connected');
+
   // Start upload processor
   await uploadProcessor.start();
   console.log('🤖 Upload processor activated');

@@ -230,10 +230,16 @@
                         <span>最終更新: <span id="queueMonitorLastUpdated">-</span></span>
                         <span style="margin-left: 20px;">件数: <span id="queueMonitorCount">0</span>件</span>
                     </div>
-                    <button class="btn btn--secondary btn--small" id="refreshQueueMonitorBtn">
-                        <span class="btn__icon">🔄</span>
-                        <span class="btn__text">更新</span>
-                    </button>
+                    <div>
+                        <button class="btn btn--primary btn--small" id="batchPrintBtn" style="margin-right: 10px;">
+                            <span class="btn__icon">🖨️</span>
+                            <span class="btn__text">まとめて印刷</span>
+                        </button>
+                        <button class="btn btn--secondary btn--small" id="refreshQueueMonitorBtn">
+                            <span class="btn__icon">🔄</span>
+                            <span class="btn__text">更新</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="queue-monitor-table-container">
                     <table class="queue-monitor-table" style="width: 100%; border-collapse: collapse;">
@@ -275,6 +281,7 @@
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/batchPrint.js"></script>
     <script src="js/ai_report_generator.js"></script>
 </body>
 </html>

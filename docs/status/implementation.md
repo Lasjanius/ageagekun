@@ -1,6 +1,6 @@
 # 実装ステータス
 
-最終更新: 2025年9月20日
+最終更新: 2025年1月22日
 
 ## 実装完了機能 ✅
 
@@ -116,6 +116,24 @@
   - 患者IDフォーマット
   - パス構築
 
+### PDFバッチ印刷機能 (v5.0.0)
+- ✅ バックエンドサービス (`backend/services/batchPrintService.js`)
+  - SimpleJobQueueクラス実装
+  - PDF連結処理（pdf-lib）
+  - セキュリティ検証機能
+- ✅ コントローラー (`backend/controllers/batchPrintController.js`)
+  - 5つのAPIエンドポイント実装
+  - エラーハンドリング統一
+- ✅ ルート定義 (`backend/routes/batchPrint.js`)
+  - RESTful API設計
+- ✅ フロントエンド (`frontend/js/batchPrint.js`)
+  - 選択式UI（最大200件）
+  - WebSocket進捗表示
+  - モーダル管理
+- ✅ データベース (`schema/batch_print_table.sql`)
+  - batch_printsテーブル作成
+  - 配列型カラムで文書ID管理
+
 ### UI/UXデザイン
 - ✅ デザインシステム構築 (`frontend/css/styles.css`)
   - CSS変数による一元管理
@@ -197,6 +215,40 @@
 - ⬜ 応答時間測定
 
 ## リリースノート
+
+### v5.0.0 (2025-09-22)
+- ✨ **PDF連結印刷機能の完全実装**
+- 📑 バッチ処理機能
+  - ready_to_printステータスのPDF最大200件を連結
+  - サーバーサイドPDF処理（pdf-lib使用）
+  - 非同期処理でNode.jsブロッキングを回避
+- 🔒 セキュリティ強化
+  - パストラバーサル攻撃対策実装
+  - documentIdsの妥当性検証
+  - 500MB総サイズ制限によるメモリ保護
+- 🚀 パフォーマンス最適化
+  - Redis不要のシンプルジョブキュー実装
+  - 逐次処理でメモリ使用量を最小化
+  - setImmediateによるイベントループ最適化
+- 💾 データ管理
+  - batch_printsテーブルで履歴管理
+  - 物理削除機能（ファイル＋DB即座削除）
+  - 60日経過PDFアラート機能
+- 🎨 UI/UX改善
+  - キューモニターに「まとめて印刷」ボタン追加
+  - リアルタイム進捗表示（WebSocket）
+  - 新しいタブで生成PDF自動表示
+  - 選択式UI（最大200件制限、デフォルト全選択）
+- 🔄 ステータスフロー
+  - mergingステータス追加（エラー可視化）
+  - ready_to_print → merging → done の遷移
+- 🗄️ データベース更新
+  - rpa_queueテーブルにmergingステータス追加
+  - batch_printsテーブル新規作成
+- 🛠️ 技術仕様
+  - SimpleJobQueueクラスによる軽量実装
+  - /api/batch-print/* エンドポイント群追加
+  - batchPrintService.js, batchPrintController.js実装
 
 ### v4.0.0 (2025-09-20)
 - ✨ Azure OpenAI APIへの完全移行
@@ -330,9 +382,53 @@
 - ✨ WebSocketリアルタイム通信
 - ✨ RPA連携基盤
 
-## 次リリース予定 (v3.3.0)
+## 次リリース予定 (v5.0.0)
 
-### 検討中の機能
+### PDF連結印刷機能 🖨️
+
+#### 計画中の実装
+- 🔧 バックエンド実装
+  - [ ] pdf-lib, bullのインストール
+  - [ ] batchPrintService.jsの作成
+  - [ ] APIエンドポイントの実装
+    - [ ] GET /api/batch-print/ready-documents
+    - [ ] POST /api/batch-print/merge
+    - [ ] GET /api/batch-print/view/:batchId
+    - [ ] GET /api/batch-print/history
+    - [ ] DELETE /api/batch-print/:batchId
+  - [ ] ジョブキューの設定
+  - [ ] WebSocket進捗通知
+
+- 🎨 フロントエンド実装
+  - [ ] キューモニタリングモーダルへのボタン追加
+  - [ ] 印刷対象選択モーダルの作成（200件制限）
+  - [ ] プログレスバー実装
+  - [ ] 連結PDF履歴管理画面
+  - [ ] 60日アラート機能
+
+- 🗄️ データベース
+  - [ ] batch_printsテーブル作成
+  - [ ] インデックス設定
+  - [ ] patients/batch_prints/ディレクトリ作成
+
+- 🧪 テスト
+  - [ ] 200件での連結テスト
+  - [ ] 破損PDFのスキップ確認
+  - [ ] 新しいタブ表示確認
+  - [ ] 削除機能の動作確認
+  - [ ] 60日アラート表示確認
+
+#### 主要機能
+- **最大200件選択可能**（メモリ最適化）
+- **非同期処理**（Bull/BullMQジョブキュー）
+- **ステータスフロー**: ready_to_print → merging → done
+- **エラー可視化**: mergingステータス維持
+- **新しいタブでPDF自動表示**
+- **履歴管理**: batch_printsテーブル
+- **物理削除**: ファイル＋DBレコード即座削除
+- **60日アラート**: 通知のみ（自動削除なし）
+
+### その他検討中の機能
 - 複数ドキュメントの一括削除
 - 削除履歴の保存とアンドゥ機能
 - ゴミ箱機能（ソフトデリート）

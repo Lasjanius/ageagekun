@@ -17,7 +17,8 @@ Power Automate Desktop (PAD)とPostgreSQLデータベースを連携し、モバ
 | pending | 処理待ち | processing | PAD |
 | processing | アップロード中 | uploaded/failed | PAD |
 | uploaded | アップロード完了 | ready_to_print | システム（自動） |
-| ready_to_print | 印刷待機中 | done | 手動操作 |
+| ready_to_print | 印刷待機中 | merging/done | PDF連結/手動操作 |
+| merging | PDF連結処理中 | done/merging | システム/エラー時維持 |
 | done | 全処理完了 | - | - |
 | failed | エラー | - | 手動復旧 |
 | canceled | キャンセル | - | - |
@@ -26,8 +27,11 @@ Power Automate Desktop (PAD)とPostgreSQLデータベースを連携し、モバ
 1. **pending → processing**: PADがタスクを取得して処理開始
 2. **processing → uploaded**: PADがモバカルネットへのアップロード完了
 3. **uploaded → ready_to_print**: トリガーによる自動ファイル移動後
-4. **ready_to_print → done**: 印刷完了後の手動更新
-5. **any → failed**: エラー発生時
+4. **ready_to_print → merging**: PDF連結処理開始時
+5. **merging → done**: PDF連結成功時
+6. **merging → merging**: PDF連結失敗時（エラー可視化のため維持）
+7. **ready_to_print → done**: 個別印刷完了時
+8. **any → failed**: エラー発生時
 
 ## PAD側の処理フロー（自律処理）
 
@@ -335,6 +339,7 @@ GROUP BY status, DATE(created_at);
 | processing | 処理中 | 🔄 | #007bff | rgba(0, 123, 255, 0.1) |
 | uploaded | アップロード完了 | ☁️ | #17a2b8 | rgba(23, 162, 184, 0.1) |
 | ready_to_print | 印刷待ち | 🖨️ | #ffc107 | rgba(255, 193, 7, 0.1) |
+| merging | 連結処理中 | 📑 | #ff9800 | rgba(255, 152, 0, 0.1) |
 | done | 完了 | ✅ | #28a745 | rgba(40, 167, 69, 0.1) |
 | failed | エラー | ❌ | #dc3545 | rgba(220, 53, 69, 0.1) |
 | canceled | キャンセル | ⛔ | #6c757d | rgba(108, 117, 125, 0.1) |
@@ -345,6 +350,7 @@ GROUP BY status, DATE(created_at);
 .queue-row--processing { border-left: 4px solid #007bff; }
 .queue-row--uploaded { border-left: 4px solid #17a2b8; }
 .queue-row--print-ready { border-left: 4px solid #ffc107; }
+.queue-row--merging { border-left: 4px solid #ff9800; }
 .queue-row--done { border-left: 4px solid #28a745; }
 .queue-row--failed { border-left: 4px solid #dc3545; }
 .queue-row--canceled { border-left: 4px solid #6c757d; }
@@ -373,6 +379,12 @@ GROUP BY status, DATE(created_at);
 - ファイル移動の確認（uploadedフォルダの存在）
 - Documents.passパスの重複uploaded問題の確認
 - トリガー関数の実行ログ確認
+
+#### mergingステータスのまま残る
+- PDF連結時にエラーが発生した場合の可視化
+- 破損PDFまたはアクセスできないファイル
+- batch_prints.failed_idsで確認可能
+- 手動で'done'または'failed'に変更して解決
 
 #### ステータス移行の確認
 ```sql
