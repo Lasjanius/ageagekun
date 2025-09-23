@@ -2,7 +2,10 @@
 const UI = {
     // DOM要素のキャッシュ
     elements: {},
-    
+
+    // ローディング状態の管理
+    loadingSnapshots: {},
+
     // 初期化
     init() {
         this.cacheElements();
@@ -366,19 +369,37 @@ const UI = {
         this.updateSelectedCount();
     },
     
-    // ローディング表示
-    showLoading() {
+    // ローディング表示（パラメータ対応版）
+    showLoading(message = '読み込み中...') {
+        const view = this.getCurrentView();
+        const targetElement = view === 'patient' ?
+            this.elements.patientList : this.elements.documentList;
+
+        // 初回のみ元のコンテンツを保存
+        if (!this.loadingSnapshots[view]) {
+            this.loadingSnapshots[view] = targetElement.innerHTML;
+        }
+
         const loadingHTML = `
             <div class="loading">
                 <div class="loading__spinner"></div>
-                <div class="loading__text">読み込み中...</div>
+                <div class="loading__text">${message}</div>
             </div>
         `;
-        
-        if (this.getCurrentView() === 'patient') {
-            this.elements.patientList.innerHTML = loadingHTML;
-        } else {
-            this.elements.documentList.innerHTML = loadingHTML;
+
+        targetElement.innerHTML = loadingHTML;
+    },
+
+    // ローディングを非表示
+    hideLoading() {
+        const view = this.getCurrentView();
+        const targetElement = view === 'patient' ?
+            this.elements.patientList : this.elements.documentList;
+
+        // ローディング表示中の場合のみ復元
+        if (targetElement.querySelector('.loading') && this.loadingSnapshots[view]) {
+            targetElement.innerHTML = this.loadingSnapshots[view];
+            delete this.loadingSnapshots[view];
         }
     },
     

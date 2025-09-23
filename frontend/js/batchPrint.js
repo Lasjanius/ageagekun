@@ -16,7 +16,6 @@ const BatchPrint = {
 
   // 定数
   MAX_DOCUMENTS: 200,
-  API_BASE: '/api/batch-print',
 
   // 初期化
   init() {
@@ -42,6 +41,7 @@ const BatchPrint = {
     // App.jsのWebSocket接続を利用
     if (window.App && window.App.state.ws) {
       const ws = window.App.state.ws;
+      console.log('✅ BatchPrint: WebSocket listener attached successfully');
 
       ws.addEventListener('message', (event) => {
         try {
@@ -49,12 +49,15 @@ const BatchPrint = {
 
           switch (data.type) {
             case 'batchPrintProgress':
+              console.log('📊 BatchPrint: Progress update received', data.data);
               this.handleProgress(data.data);
               break;
             case 'batchPrintComplete':
+              console.log('✅ BatchPrint: Complete message received', data.data);
               this.handleComplete(data.data);
               break;
             case 'batchPrintError':
+              console.log('❌ BatchPrint: Error message received', data.data);
               this.handleError(data.data);
               break;
           }
@@ -62,6 +65,10 @@ const BatchPrint = {
           console.error('WebSocket message parse error:', error);
         }
       });
+    } else {
+      console.warn('⚠️ BatchPrint: WebSocket not ready, retrying in 1 second...');
+      // WebSocketがまだ準備できていない場合は1秒後に再試行
+      setTimeout(() => this.listenToWebSocket(), 1000);
     }
   },
 
@@ -73,13 +80,7 @@ const BatchPrint = {
         sortOrder: this.state.sortOrder
       });
 
-      const response = await fetch(`${this.API_BASE}/ready-documents?${params}`);
-
-      if (!response.ok) {
-        throw new Error('ドキュメントの取得に失敗しました');
-      }
-
-      const result = await response.json();
+      const result = await API.request(`/batch-print/ready-documents?${params}`);
 
       if (result.success) {
         this.state.readyDocuments = result.data.documents;
@@ -367,11 +368,8 @@ const BatchPrint = {
       this.closeModal();
       this.showProgressModal();
 
-      const response = await fetch(`${this.API_BASE}/merge`, {
+      const result = await API.request('/batch-print/merge', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           documentIds: this.state.selectedDocuments,
           sortBy: this.state.sortBy,
@@ -379,16 +377,16 @@ const BatchPrint = {
         })
       });
 
-      if (!response.ok) {
-        throw new Error('PDF連結の開始に失敗しました');
-      }
-
-      const result = await response.json();
-
       if (result.success) {
         this.state.currentJobId = result.data.jobId;
         this.state.progress.total = result.data.documentCount;
         this.state.isProcessing = true;
+
+        // DOM更新を追加 - totalProgressの値を更新
+        const totalProgressEl = document.getElementById('totalProgress');
+        if (totalProgressEl) {
+          totalProgressEl.textContent = result.data.documentCount;
+        }
 
         UI.showToast('PDF連結処理を開始しました', 'success');
       } else {
@@ -445,6 +443,7 @@ const BatchPrint = {
     const progressFill = document.getElementById('progressBarFill');
     const progressText = document.getElementById('progressText');
     const currentProgress = document.getElementById('currentProgress');
+    const totalProgress = document.getElementById('totalProgress');
 
     if (progressFill) {
       progressFill.style.width = `${percentage}%`;
@@ -454,6 +453,10 @@ const BatchPrint = {
     }
     if (currentProgress) {
       currentProgress.textContent = data.current;
+    }
+    // totalの更新も追加
+    if (totalProgress && data.total) {
+      totalProgress.textContent = data.total;
     }
   },
 
@@ -469,7 +472,7 @@ const BatchPrint = {
 
     // 新しいタブでPDFを開く
     setTimeout(() => {
-      window.open(`${this.API_BASE}/view/${data.batchId}`, '_blank');
+      window.open(`http://localhost:3000/api/batch-print/view/${data.batchId}`, '_blank');
     }, 500);
 
     // 状態リセット

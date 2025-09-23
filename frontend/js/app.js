@@ -822,6 +822,9 @@ const App = {
     }
 };
 
+// Appをグローバルスコープに公開（他のモジュールから参照可能にする）
+window.App = App;
+
 // ページ読み込み完了時に初期化
 document.addEventListener('DOMContentLoaded', () => {
     App.init();

@@ -165,7 +165,11 @@ class WebSocketService {
       data,
       timestamp: new Date().toISOString()
     });
-    
+
+    // デバッグ用ログ追加
+    const clientCount = this.wss.clients.size;
+    console.log(`📡 Broadcasting ${type} to ${clientCount} clients`);
+
     this.wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);

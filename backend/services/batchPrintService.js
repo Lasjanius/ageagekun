@@ -48,14 +48,11 @@ class SimpleJobQueue {
 
         // 処理完了通知
         if (wsService) {
-          wsService.broadcast({
-            type: 'batchPrintComplete',
-            data: {
-              batchId: result.id,
-              successCount: result.success_ids.length,
-              failedCount: result.failed_ids.length,
-              jobId: job.id
-            }
+          wsService.broadcast('batchPrintComplete', {
+            batchId: result.id,
+            successCount: result.success_ids.length,
+            failedCount: result.failed_ids.length,
+            jobId: job.id
           });
         }
 
@@ -69,12 +66,9 @@ class SimpleJobQueue {
 
         // エラー通知
         if (wsService) {
-          wsService.broadcast({
-            type: 'batchPrintError',
-            data: {
-              message: error.message,
-              jobId: job.id
-            }
+          wsService.broadcast('batchPrintError', {
+            message: error.message,
+            jobId: job.id
           });
         }
       }
@@ -364,13 +358,10 @@ const mergePDFs = async (documentIds, jobId = null) => {
 
       // 進捗通知
       if (wsService) {
-        wsService.broadcast({
-          type: 'batchPrintProgress',
-          data: {
-            current: results.success.length + results.failed.length,
-            total: documentIds.length,
-            jobId
-          }
+        wsService.broadcast('batchPrintProgress', {
+          current: results.success.length + results.failed.length,
+          total: documentIds.length,
+          jobId
         });
       }
 

@@ -2,10 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
+const getPort = require('get-port').default;
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -108,9 +108,26 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-server.listen(PORT, async () => {
-  console.log(`
+// Start server with automatic port selection
+(async () => {
+  try {
+    // Get available port - try preferred port first, then fallback to others
+    const preferredPort = parseInt(process.env.PORT) || 3000;
+    const PORT = await getPort({
+      port: [
+        preferredPort,     // Try preferred port first
+        3001, 3002, 3003, 3004, 3005,  // Fallback ports
+        0  // Let OS assign any available port if all above are taken
+      ]
+    });
+
+    // Notify if using a different port
+    if (PORT !== preferredPort) {
+      console.log(`⚠️  Port ${preferredPort} is in use, using port ${PORT} instead`);
+    }
+
+    server.listen(PORT, async () => {
+      console.log(`
 ╔════════════════════════════════════════╗
 ║     Ageagekun Backend Server          ║
 ╠════════════════════════════════════════╣
@@ -118,20 +135,25 @@ server.listen(PORT, async () => {
 ║  📍 http://localhost:${PORT}              ║
 ║  🔧 Environment: ${process.env.NODE_ENV || 'development'}      ║
 ╚════════════════════════════════════════╝
-  `);
-  
-  // Initialize WebSocket service
-  await wsService.initialize(server);
-  console.log('🌐 WebSocket service activated');
+      `);
 
-  // Connect WebSocket service to batch print service
-  batchPrintService.setWebSocketService(wsService);
-  console.log('🖨️ Batch print service connected');
+      // Initialize WebSocket service
+      await wsService.initialize(server);
+      console.log('🌐 WebSocket service activated');
 
-  // Start upload processor
-  await uploadProcessor.start();
-  console.log('🤖 Upload processor activated');
-});
+      // Connect WebSocket service to batch print service
+      batchPrintService.setWebSocketService(wsService);
+      console.log('🖨️ Batch print service connected');
+
+      // Start upload processor
+      await uploadProcessor.start();
+      console.log('🤖 Upload processor activated');
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+})();
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
