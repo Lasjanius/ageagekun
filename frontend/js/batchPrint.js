@@ -466,14 +466,8 @@ const BatchPrint = {
 
     this.closeProgressModal();
 
-    // 成功メッセージ
-    const message = `PDF連結が完了しました（${data.successCount}件成功${data.failedCount > 0 ? `, ${data.failedCount}件失敗` : ''}）`;
-    UI.showToast(message, data.failedCount > 0 ? 'warning' : 'success');
-
-    // 新しいタブでPDFを開く
-    setTimeout(() => {
-      window.open(`http://localhost:3000/api/batch-print/view/${data.batchId}`, '_blank');
-    }, 500);
+    // 完了モーダルを表示
+    this.showCompletionModal(data);
 
     // 状態リセット
     this.resetState();
@@ -526,6 +520,74 @@ const BatchPrint = {
     this.state.isProcessing = false;
     this.state.currentJobId = null;
     this.state.progress = { current: 0, total: 0 };
+  },
+
+  // 完了モーダルを表示
+  showCompletionModal(data) {
+    // 既存のモーダルがあれば削除
+    const existingModal = document.getElementById('batchPrintCompleteModal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    const modalHTML = `
+      <div class="modal" id="batchPrintCompleteModal" style="display: block;">
+        <div class="modal__overlay"></div>
+        <div class="modal__content" style="max-width: 500px;">
+          <div class="modal__header">
+            <h2 class="modal__title">✅ PDF連結完了</h2>
+          </div>
+          <div class="modal__body" style="padding: 30px; text-align: center;">
+            <p style="font-size: 18px; margin-bottom: 20px; font-weight: 500;">
+              ${data.successCount}件のドキュメントを連結しました。
+              ${data.failedCount > 0 ? `<br><span style="color: #ff9800;">（${data.failedCount}件は処理に失敗しました）</span>` : ''}
+            </p>
+            <p style="color: #666; font-size: 16px;">
+              印刷か保存を行ってください。
+            </p>
+          </div>
+          <div class="modal__footer" style="text-align: center;">
+            <button class="btn btn--primary" id="okBatchPrintCompleteBtn" style="min-width: 120px;">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // モーダルを追加
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // OKボタンのイベントリスナー
+    const okBtn = document.getElementById('okBatchPrintCompleteBtn');
+    if (okBtn) {
+      okBtn.addEventListener('click', () => {
+        // モーダルを閉じる
+        const modal = document.getElementById('batchPrintCompleteModal');
+        if (modal) {
+          modal.remove();
+        }
+
+        // PDFを新しいタブで開く
+        window.open(`http://localhost:3000/api/batch-print/view/${data.batchId}`, '_blank');
+      });
+
+      // フォーカスをOKボタンに設定
+      okBtn.focus();
+    }
+
+    // オーバーレイクリックでも閉じるように
+    const overlay = document.querySelector('#batchPrintCompleteModal .modal__overlay');
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        const modal = document.getElementById('batchPrintCompleteModal');
+        if (modal) {
+          modal.remove();
+        }
+        // PDFを新しいタブで開く
+        window.open(`http://localhost:3000/api/batch-print/view/${data.batchId}`, '_blank');
+      });
+    }
   }
 };
 
