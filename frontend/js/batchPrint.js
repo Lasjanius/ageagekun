@@ -33,6 +33,17 @@ const BatchPrint = {
       }
     });
 
+    // 連結履歴ボタンのイベント（キューモニターモーダル内）
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'batchPrintHistoryBtn' || e.target.closest('#batchPrintHistoryBtn')) {
+        if (window.BatchPrintHistory) {
+          BatchPrintHistory.showHistoryModal();
+        } else {
+          console.error('BatchPrintHistory module not loaded');
+        }
+      }
+    });
+
     // モーダル内のイベントは動的に設定
   },
 

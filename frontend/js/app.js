@@ -25,27 +25,56 @@ const App = {
     // 初期化
     async init() {
         console.log('Initializing AgeAge-kun... 🚀');
-        
+
         // UI初期化
         UI.init();
-        
+
         // イベントリスナー設定
         this.attachEventListeners();
-        
+
         // WebSocket接続
         this.connectWebSocket();
-        
+
         // 初期データ読み込み
         await this.loadData();
-        
+
+        // 60日経過PDFチェック
+        await this.checkOldBatchPrints();
+
         // 定期更新（60秒ごと）
         setInterval(() => {
             if (!this.state.isUploading) {
                 this.loadData();
             }
         }, 60000);
-        
+
         UI.showToast('システムが起動しました', 'success');
+    },
+
+    // 60日経過PDFのチェック
+    async checkOldBatchPrints() {
+        // BatchPrintHistoryAPIが利用可能になっていることを確認
+        if (!window.BatchPrintHistoryAPI) {
+            console.log('BatchPrintHistoryAPI not yet loaded, skipping old prints check');
+            return;
+        }
+
+        try {
+            const result = await BatchPrintHistoryAPI.fetchHistory();
+
+            if (result.success && result.data.oldCount > 0) {
+                // 初回のみ通知（sessionStorageでフラグ管理）
+                if (!sessionStorage.getItem('batchPrintAlertShown')) {
+                    UI.showToast(
+                        `${result.data.oldCount}件の古いPDFがあります。履歴を確認してください。`,
+                        'warning'
+                    );
+                    sessionStorage.setItem('batchPrintAlertShown', 'true');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check old batch prints:', error);
+        }
     },
     
     // イベントリスナー設定
@@ -147,6 +176,10 @@ const App = {
             } else if (action === 'delete-queue') {
                 const queueId = modal.dataset.queueId;
                 this.handleDeleteQueueItem(queueId);
+            } else if (action === 'delete-batch-print') {
+                // 連結PDF削除処理
+                const batchId = modal.dataset.batchId;
+                this.handleDeleteBatchPrint(batchId);
             } else {
                 this.startUpload();
             }
@@ -818,6 +851,34 @@ const App = {
             // データセット属性をクリア
             delete UI.elements.confirmModal.dataset.action;
             delete UI.elements.confirmModal.dataset.queueId;
+        }
+    },
+
+    // 連結PDF削除処理
+    async handleDeleteBatchPrint(batchId) {
+        UI.hideConfirmModal();
+
+        try {
+            // APIを呼び出して削除
+            const result = await BatchPrintHistoryAPI.deletePDF(batchId);
+
+            if (result.success) {
+                UI.showToast('PDFを削除しました', 'success');
+
+                // 履歴モーダルが開いていれば更新
+                if (document.getElementById('batchPrintHistoryModal') && window.BatchPrintHistory) {
+                    await BatchPrintHistory.refreshHistory();
+                }
+            } else {
+                UI.showToast(result.error || '削除に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to delete batch print:', error);
+            UI.showToast('削除に失敗しました', 'error');
+        } finally {
+            // データセット属性をクリア
+            delete UI.elements.confirmModal.dataset.action;
+            delete UI.elements.confirmModal.dataset.batchId;
         }
     }
 };

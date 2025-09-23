@@ -1441,3 +1441,78 @@ body {
         height: 20px;
     }
 }
+
+/* ==================== */
+/* 連結PDF履歴関連スタイル */
+/* ==================== */
+
+/* 60日経過警告アラート */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.alert--warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
+/* 60日経過行のスタイル */
+.old-print-warning {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+/* テーブルヘッダー固定 */
+#batchPrintHistoryModal thead {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 履歴テーブルスタイル */
+#batchPrintHistoryModal .table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#batchPrintHistoryModal .table th,
+#batchPrintHistoryModal .table td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#batchPrintHistoryModal .table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* 危険ボタン（削除用） */
+.btn--danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn--danger:hover {
+    background: linear-gradient(135deg, #ff5252 0%, #ff3838 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 82, 82, 0.3);
+}
+
+.btn--danger:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(255, 82, 82, 0.2);
+}

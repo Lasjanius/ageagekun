@@ -4,6 +4,7 @@ const QUEUE_STATUS = {
   PROCESSING: 'processing',
   UPLOADED: 'uploaded',
   READY_TO_PRINT: 'ready_to_print',
+  MERGING: 'merging',
   DONE: 'done',
   FAILED: 'failed',
   CANCELED: 'canceled'
@@ -14,7 +15,8 @@ const ACTIVE_STATUSES = [
   QUEUE_STATUS.PENDING,
   QUEUE_STATUS.PROCESSING,
   QUEUE_STATUS.UPLOADED,
-  QUEUE_STATUS.READY_TO_PRINT
+  QUEUE_STATUS.READY_TO_PRINT,
+  QUEUE_STATUS.MERGING
 ];
 
 // 完了ステータス（ready_to_printを完了として扱う）
@@ -54,6 +56,13 @@ const STATUS_CONFIG = {
     bgColor: 'rgba(255, 193, 7, 0.1)',
     icon: '🖨️',
     description: '印刷待機中'
+  },
+  [QUEUE_STATUS.MERGING]: {
+    label: 'PDF連結中',
+    color: '#fd7e14',
+    bgColor: 'rgba(253, 126, 20, 0.1)',
+    icon: '📄',
+    description: 'PDF連結処理中'
   },
   [QUEUE_STATUS.DONE]: {
     label: '完了',
