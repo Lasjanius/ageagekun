@@ -28,9 +28,16 @@ allright/
     │   ├── local_network_setup_guide.md - Network configuration guide
     │   ├── migration_summary_20250925.md - Migration work record
     │   └── inspect.md - UI automation element documentation
+    ├── backup_20250925_091032/ - Complete backup (2025/09/25)
+    │   ├── ageagekun.dump - Database dump (8.7MB)
+    │   ├── patients/ - Patient data (3.6MB)
+    │   ├── .env.backend - Backend configuration
+    │   ├── .env.local - Local environment with API keys
+    │   └── README_BACKUP.md - Backup documentation
     ├── backup_dev.ps1 - Automated backup script
     ├── test_production.ps1 - Production test script
     ├── test_rpa_trigger.ps1 - RPA trigger test script
+    ├── test_care_management.ps1 - Care management normalization test
     └── .env.production.template - Production environment template
 ```
 
@@ -439,6 +446,35 @@ pause
 - PowerShell scripts may have issues with UTF-8/Shift-JIS encoding when processing Japanese characters
 - SQL statements containing Japanese text (like ケアプラン.pdf) can cause encoding errors
 - Using Queue IDs and File IDs instead of Japanese filenames avoids these issues
+
+## Migration & Deployment
+
+### 移行に必要なファイル（運用PCへコピー）
+
+#### 既存バックアップフォルダ（必須）
+```
+📁 backup_20250925_091032/ - このフォルダ全体をUSB等で移動
+   ├── ageagekun.dump (8.7MB) - データベース完全バックアップ
+   ├── patients/ (3.6MB) - 全患者データ
+   ├── .env.backend - バックエンド設定
+   ├── .env.local - Azure OpenAI APIキー含む
+   └── README_BACKUP.md - バックアップ説明書
+```
+
+#### 追加で必要なファイル
+- `.env.production.template` - 運用環境設定テンプレート
+- `test_production.ps1` - 動作確認スクリプト
+- `docs/migration_guide.md` - 移行手順書（参照用）
+
+### 移行手順（簡易版）
+1. **開発PC**: backup_20250925_091032/フォルダをUSBにコピー
+2. **運用PC**: PostgreSQL 17, Node.js, Gitをインストール
+3. **運用PC**: GitHubからソースコードをクローン
+4. **運用PC**: backup_20250925_091032/からデータをリストア
+5. **運用PC**: .env.production.templateを.envにコピーして設定
+6. **運用PC**: test_production.ps1で動作確認
+
+詳細は `docs/migration_guide.md` を参照
 
 ## Codex MCP Usage
 
