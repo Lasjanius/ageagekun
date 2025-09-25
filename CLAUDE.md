@@ -22,8 +22,16 @@ allright/
     │   ├── DBschema - Original database schema definition
     │   └── create_schema.sql - Executable SQL for database setup
     ├── docs/
+    │   ├── README.md - Documentation index
+    │   ├── PRD.md - Product requirements (master index)
+    │   ├── migration_guide.md - Environment migration guide
+    │   ├── local_network_setup_guide.md - Network configuration guide
+    │   ├── migration_summary_20250925.md - Migration work record
     │   └── inspect.md - UI automation element documentation
-    └── test_rpa_trigger.ps1 - RPA trigger test script
+    ├── backup_dev.ps1 - Automated backup script
+    ├── test_production.ps1 - Production test script
+    ├── test_rpa_trigger.ps1 - RPA trigger test script
+    └── .env.production.template - Production environment template
 ```
 
 ## Database Architecture (正規化済み)
@@ -482,3 +490,46 @@ mcp__codex__codex(
 - Use `sandbox="read-only"` for safety when only reading files
 - Specify the correct `cwd` for your working directory
 - The tool can handle complex multi-step tasks autonomously
+
+## Environment Migration and Network Setup
+
+### Quick Links
+- **[docs/README.md](docs/README.md)** - Documentation index with all guides
+- **[docs/migration_guide.md](docs/migration_guide.md)** - Complete migration guide from development to production
+- **[docs/local_network_setup_guide.md](docs/local_network_setup_guide.md)** - Multi-PC network configuration
+- **[docs/migration_summary_20250925.md](docs/migration_summary_20250925.md)** - Latest migration work record
+
+### Migration Tools
+- **[backup_dev.ps1](backup_dev.ps1)** - Automated backup script for development environment
+- **[test_production.ps1](test_production.ps1)** - Production environment test script
+- **[.env.production.template](.env.production.template)** - Production environment configuration template
+
+### Quick Migration Steps
+1. **Backup Development Environment**
+   ```powershell
+   .\backup_dev.ps1 -Compress
+   ```
+
+2. **Transfer to Production PC**
+   - Copy the generated backup folder via USB or network
+
+3. **Setup Production Environment**
+   - Install PostgreSQL 17, Node.js, Git
+   - Clone repository from GitHub
+   - Follow [docs/migration_guide.md](docs/migration_guide.md)
+
+4. **Configure Network Access**
+   - Set static IP for server PC
+   - Configure PostgreSQL and firewall
+   - Follow [docs/local_network_setup_guide.md](docs/local_network_setup_guide.md)
+
+5. **Test Installation**
+   ```powershell
+   .\test_production.ps1 -FullTest
+   ```
+
+### Latest Backup Information (2025/09/25)
+- **Location**: `backup_20250925_091032/`
+- **Database**: 8.7 MB (ageagekun.dump)
+- **Files**: 3.6 MB (patients folder)
+- **Config**: .env.backend, .env.local included
